@@ -44,23 +44,27 @@ $redirectUrl = $tpl->get('redirectUrl');
             <?php $tpl->dispatchTplEvent('beforeFormClose'); ?>
 
     </form>
-    <?php } else {
-        echo $tpl->language->__('text.no_login_form');
-        ?><br /><br />
-    <?php }// if disableLoginForm?>
+    <?php } ?>
 
     <?php if ($tpl->get('oidcEnabled')) { ?>
 
         <?php $tpl->dispatchTplEvent('beforeOidcButton'); ?>
 
         <div class="">
-            <div style="margin-top:20px; border-bottom:1px solid #ccc; with:100%; height:10px; overflow:show; text-align:center; margin-bottom:40px;">
-                <p style="text-align:center; display:inline-block; background:var(--secondary-background); padding:0px 5px;"><?php echo $tpl->language->__('label.or_login_with'); ?></p>
-            </div>
+            <?php if ($tpl->get('noLoginForm') === false) { ?>
+                <div style="margin-top:20px; border-bottom:1px solid #ccc; with:100%; height:10px; overflow:show; text-align:center; margin-bottom:40px;">
+                    <p style="text-align:center; display:inline-block; background:var(--secondary-background); padding:0px 5px;"><?php echo $tpl->language->__('label.or_login_with'); ?></p>
+                </div>
+            <?php } ?>
             <a href="<?= BASE_URL ?>/oidc/login" style="width:100%;" class="btn btn-primary">
                 <span class="fa-brands fa-microsoft" style="margin-right:8px;"></span>
                 Login with SSO
             </a>
+            <?php if ($tpl->get('noLoginForm') === true) { ?>
+                <div style="text-align:center; margin-top:10px;">
+                    <a href="<?= BASE_URL ?>/auth/login?advanced=1">Advanced Login</a>
+                </div>
+            <?php } ?>
         </div>
     <?php } ?>
 

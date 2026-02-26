@@ -79,8 +79,14 @@ class Login extends Controller
         $this->tpl->assign('oidcEnabled', $oidcEnabled);
 
         $hideLogin = $this->settingService->getSetting('auth.hideDefaultLogin');
+        $showAdvancedLogin = isset($_GET['advanced'])
+            && in_array(strtolower((string) $_GET['advanced']), ['1', 'true', 'on', 'yes'], true);
 
-        if (! empty($hideLogin) && $hideLogin == 'on') {
+        // When SSO is enabled, default to SSO-only login.
+        // Append ?advanced=1 to temporarily expose email/password fields.
+        if ($oidcEnabled === true && ! $showAdvancedLogin) {
+            $this->tpl->assign('noLoginForm', true);
+        } elseif (! empty($hideLogin) && $hideLogin == 'on') {
             $this->tpl->assign('noLoginForm', true);
         } else {
             $this->tpl->assign('noLoginForm', $this->config->disableLoginForm);

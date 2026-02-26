@@ -14,7 +14,7 @@ class DefaultConfig
      * @var string Name of your site, can be changed later
      */
     #[LaravelConfig('app.name')]
-    public string $sitename = "Rehla Digital's Al Mudheer";
+    public string $sitename = 'Al Mudheer';
 
     /**
      * @var string Default language
