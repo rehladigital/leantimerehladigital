@@ -67,6 +67,9 @@ class SchemaBuilder
      */
     public function insertInitialData(array $values, string $pwReset): void
     {
+        $initialPassword = (string) ($values['password'] ?? '');
+        $hasInitialPassword = $initialPassword !== '';
+
         // Insert initial client/company
         DB::table('zp_clients')->insert([
             'id' => 1,
@@ -87,14 +90,14 @@ class SchemaBuilder
         DB::table('zp_user')->insert([
             'id' => 1,
             'username' => $values['email'],
-            'password' => '',
+            'password' => $hasInitialPassword ? password_hash($initialPassword, PASSWORD_DEFAULT) : '',
             'firstname' => $values['firstname'],
             'lastname' => $values['lastname'],
             'phone' => '',
             'profileId' => '',
             'lastlogin' => null,
             'lastpwd_change' => null,
-            'status' => 'i',
+            'status' => $hasInitialPassword ? 'a' : 'i',
             'expires' => null,
             'role' => '50',
             'session' => '',
@@ -105,13 +108,14 @@ class SchemaBuilder
             'clientId' => 0,
             'notifications' => 1,
             'createdOn' => now(),
-            'pwReset' => $pwReset,
+            'pwReset' => $hasInitialPassword ? '' : $pwReset,
         ]);
 
         // Insert initial settings
         DB::table('zp_settings')->insert([
             ['key' => 'db-version', 'value' => $this->appSettings->dbVersion],
             ['key' => 'companysettings.telemetry.active', 'value' => 'true'],
+            ['key' => 'companysettings.completedOnboarding', 'value' => 'true'],
         ]);
     }
 
