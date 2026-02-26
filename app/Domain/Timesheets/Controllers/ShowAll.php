@@ -47,7 +47,7 @@ class ShowAll extends Controller
     public function run(): Response
     {
         // Only admins and employees
-        Auth::authOrRedirect([Roles::$owner, Roles::$admin, Roles::$manager], true);
+        Auth::authOrRedirect([Roles::$owner], true);
 
         session(['lastPage' => BASE_URL.'/timesheets/showAll']);
 

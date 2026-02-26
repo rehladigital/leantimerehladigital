@@ -2,6 +2,11 @@
 
 @section('content')
 <x-global::pageheader :icon="'fa fa-gauge-high'">
+    <a href="{{ BASE_URL }}/tickets/showKanban?currentProject=&users={{ session('userdata.id') }}&status=not_done" class="headerCTA">
+        <i class="fa fa-table-columns"></i>
+        <span class="tw-text-[14px] tw-leading-[25px]">My Kanban</span>
+    </a>
+
     @if (count($allUsers) == 1 && !($oidcEnabled ?? false))
         <a href="#/users/newUser" class="headerCTA">
             <i class="fa fa-users"></i>

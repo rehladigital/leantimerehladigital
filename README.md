@@ -27,10 +27,11 @@ Website: [https://rehladigital.com](https://rehladigital.com)
 ## Core capabilities
 
 - Task planning with kanban, list, table, calendar, and timeline views
+- Personal "My Kanban" shortcut on dashboard for cross-project assigned tasks
 - Project dashboards, milestones, goals, and reporting
 - Team collaboration with comments, files, and documentation
 - Role-based access control and project-level assignments
-- Timesheets and work tracking
+- Timesheets and work tracking (Owner access only)
 
 ## System requirements
 
@@ -69,6 +70,7 @@ php -S localhost:8090 -t public
 - App title and branding are set to **Al Mudheer**
 - Login flow is configured to prioritize SSO
 - Most runtime settings are managed in the database
+- Timesheet pages and stopwatch are restricted to the **Owner** role
 
 ## License
 

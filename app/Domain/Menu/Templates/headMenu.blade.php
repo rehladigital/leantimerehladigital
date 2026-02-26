@@ -3,9 +3,11 @@
 <ul class="headmenu pull-right">
     @dispatchEvent('insideHeadMenu')
 
-    @include('timesheets::partials.stopwatch', [
-               'onTheClock' => $onTheClock
-           ])
+    @if (session('userdata.role') === 'owner')
+        @include('timesheets::partials.stopwatch', [
+                   'onTheClock' => $onTheClock
+               ])
+    @endif
 
 
     <li class="notificationDropdown">

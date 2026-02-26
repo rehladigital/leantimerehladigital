@@ -27,7 +27,7 @@ class DelTime extends Controller
      */
     public function run(): Response|RedirectResponse
     {
-        Auth::authOrRedirect([Roles::$owner, Roles::$admin, Roles::$manager, Roles::$editor], true);
+        Auth::authOrRedirect([Roles::$owner], true);
 
         if (isset($_GET['id']) === true) {
             $id = (int) ($_GET['id']);

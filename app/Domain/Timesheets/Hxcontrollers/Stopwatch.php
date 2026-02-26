@@ -4,6 +4,8 @@ namespace Leantime\Domain\Timesheets\Hxcontrollers;
 
 use Error;
 use Leantime\Core\Controller\HtmxController;
+use Leantime\Domain\Auth\Models\Roles;
+use Leantime\Domain\Auth\Services\Auth;
 use Leantime\Domain\Timesheets\Services\Timesheets;
 
 class Stopwatch extends HtmxController
@@ -17,6 +19,7 @@ class Stopwatch extends HtmxController
      */
     public function init(Timesheets $timesheetService): void
     {
+        Auth::authOrRedirect([Roles::$owner], true);
         $this->timesheetService = $timesheetService;
     }
 

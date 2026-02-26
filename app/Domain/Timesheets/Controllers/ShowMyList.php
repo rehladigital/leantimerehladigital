@@ -27,7 +27,7 @@ class ShowMyList extends Controller
      */
     public function run(): Response
     {
-        Auth::authOrRedirect([Roles::$owner, Roles::$admin, Roles::$manager, Roles::$editor], true);
+        Auth::authOrRedirect([Roles::$owner], true);
 
         $kind = 'all';
         if (! empty($_POST['kind'])) {
