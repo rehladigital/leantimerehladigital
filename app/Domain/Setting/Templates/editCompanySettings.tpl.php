@@ -199,13 +199,13 @@ foreach ($relevanceLevels as $level => $labelKey) { ?>
 
                                     <br />
                                     <h4 class="widgettitle title-light"><span
-                                            class="fa-brands fa-microsoft"></span><?php echo $tpl->__('subtitles.microsoft_authentication'); ?>
+                                            class="fa-brands fa-microsoft"></span>Entra ID SSO Settings
                                     </h4>
-                                    <p><?php echo $tpl->__('text.microsoft_authentication_helper'); ?></p>
+                                    <p>Azure Entra ID settings</p>
 
                                     <div class="row">
                                         <div class="col-md-3">
-                                            <label for="microsoftAuthEnabled"><?php echo $tpl->__('label.enable_microsoft_authentication'); ?></label>
+                                            <label for="microsoftAuthEnabled">Enable SSO</label>
                                         </div>
                                         <div class="col-md-7">
                                             <label class="checkbox-inline" for="microsoftAuthEnabled" style="padding-left:0;">
@@ -217,14 +217,13 @@ foreach ($relevanceLevels as $level => $labelKey) { ?>
                                                         echo 'checked="checked"';
                                                     } ?>
                                                 />
-                                                <?php echo $tpl->__('label.enabled'); ?>
                                             </label>
                                         </div>
                                     </div>
 
                                     <div class="row">
                                         <div class="col-md-3">
-                                            <label for="microsoftAuthIssuer"><?php echo $tpl->__('label.microsoft_issuer'); ?></label>
+                                            <label for="microsoftAuthIssuer">Issuer URL</label>
                                         </div>
                                         <div class="col-md-7">
                                             <input type="text"
@@ -233,14 +232,13 @@ foreach ($relevanceLevels as $level => $labelKey) { ?>
                                                    value="<?php echo $tpl->escape($companySettings['microsoftAuth']['issuer'] ?? ''); ?>"
                                                    class="pull-left"
                                                    style="width:100%;"
-                                                   placeholder="https://login.microsoftonline.com/your-tenant-id/v2.0" />
-                                            <small><?php echo $tpl->__('text.microsoft_issuer_example'); ?></small>
+                                                   placeholder="https://login.microsoftonline.com/595314e6-2742-405b-83dd-86ce319acb11/v2.0" />
                                         </div>
                                     </div>
 
                                     <div class="row">
                                         <div class="col-md-3">
-                                            <label for="microsoftAuthClientId"><?php echo $tpl->__('label.microsoft_client_id'); ?></label>
+                                            <label for="microsoftAuthClientId">Client ID</label>
                                         </div>
                                         <div class="col-md-7">
                                             <input type="text"
@@ -249,13 +247,13 @@ foreach ($relevanceLevels as $level => $labelKey) { ?>
                                                    value="<?php echo $tpl->escape($companySettings['microsoftAuth']['clientId'] ?? ''); ?>"
                                                    class="pull-left"
                                                    style="width:100%;"
-                                                   placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+                                                   placeholder="2b8ebb35-fa71-46f6-a3f1-1c7bc21726b1" />
                                         </div>
                                     </div>
 
                                     <div class="row">
                                         <div class="col-md-3">
-                                            <label for="microsoftAuthClientSecret"><?php echo $tpl->__('label.microsoft_client_secret'); ?></label>
+                                            <label for="microsoftAuthClientSecret">Client Secret</label>
                                         </div>
                                         <div class="col-md-7">
                                             <input type="password"
@@ -265,19 +263,12 @@ foreach ($relevanceLevels as $level => $labelKey) { ?>
                                                    class="pull-left"
                                                    style="width:100%;"
                                                    autocomplete="off" />
-                                            <small>
-                                                <?php
-                                                echo ! empty($companySettings['microsoftAuth']['hasClientSecret'])
-                                                    ? $tpl->__('text.microsoft_client_secret_set')
-                                                    : $tpl->__('text.microsoft_client_secret_not_set');
-?>
-                                            </small>
                                         </div>
                                     </div>
 
                                     <div class="row">
                                         <div class="col-md-3">
-                                            <label for="microsoftAuthAllowPublicRegistration"><?php echo $tpl->__('label.microsoft_allow_public_registration'); ?></label>
+                                            <label for="microsoftAuthAllowPublicRegistration">Allow Public Registration</label>
                                         </div>
                                         <div class="col-md-7">
                                             <label class="checkbox-inline" for="microsoftAuthAllowPublicRegistration" style="padding-left:0;">
@@ -289,14 +280,13 @@ foreach ($relevanceLevels as $level => $labelKey) { ?>
                                                         echo 'checked="checked"';
                                                     } ?>
                                                 />
-                                                <?php echo $tpl->__('label.enabled'); ?>
                                             </label>
                                         </div>
                                     </div>
 
                                     <div class="row">
                                         <div class="col-md-3">
-                                            <label for="microsoftAuthDefaultRole"><?php echo $tpl->__('label.microsoft_default_role'); ?></label>
+                                            <label for="microsoftAuthDefaultRole">Default role</label>
                                         </div>
                                         <div class="col-md-7">
                                             <select id="microsoftAuthDefaultRole" name="microsoftAuthDefaultRole" style="max-width:300px;">

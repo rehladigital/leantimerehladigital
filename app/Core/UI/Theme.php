@@ -267,9 +267,9 @@ class Theme
             }
         }
         $parsedColorSchemes['themeDefault'] = [
-            'name' => 'Leantime',
-            'primaryColor' => $this->iniData['general']['primaryColor'] ?? $this->colorSchemes['themeDefault']['primaryColor'],
-            'secondaryColor' => $this->iniData['general']['secondaryColor'] ?? $this->colorSchemes['themeDefault']['secondaryColor'],
+            'name' => 'Grayscale',
+            'primaryColor' => '#000000',
+            'secondaryColor' => '#757575',
         ];
 
         $primaryColor = $this->settingsRepo->getSetting('companysettings.primarycolor') ? $this->settingsRepo->getSetting('companysettings.primarycolor') : null;
@@ -479,17 +479,10 @@ class Theme
             return $_COOKIE['colorScheme'];
         }
 
-        if (! empty($this->config->primarycolor) && ! empty($this->config->secondarycolor)) {
-            // Return default
-            $this->setColorScheme('companyColors');
+        // Force grayscale as default color scheme for all users.
+        $this->setColorScheme('grayscale1');
 
-            return 'companyColors';
-        } else {
-            // Return default
-            $this->setColorScheme('themeDefault');
-
-            return 'themeDefault';
-        }
+        return 'grayscale1';
 
     }
 
@@ -1034,7 +1027,7 @@ class Theme
 
         $colorSchemes = $this->getAvailableColorSchemes();
 
-        $pickedScheme = $colorSchemes[$currentColorScheme] ?? $colorSchemes['themeDefault'];
+        $pickedScheme = $colorSchemes[$currentColorScheme] ?? ($colorSchemes['grayscale1'] ?? $colorSchemes['themeDefault']);
         if (Auth::isLoggedIn()) {
             session(['usersettings.colors.primaryColor' => $pickedScheme['primaryColor']]);
         }
@@ -1067,7 +1060,7 @@ class Theme
         $colorSchemes = $this->getAvailableColorSchemes();
         $currentColorScheme = $this->getColorScheme();
 
-        $pickedScheme = $colorSchemes[$currentColorScheme] ?? $colorSchemes['themeDefault'];
+        $pickedScheme = $colorSchemes[$currentColorScheme] ?? ($colorSchemes['grayscale1'] ?? $colorSchemes['themeDefault']);
         if (Auth::isLoggedIn()) {
             session(['usersettings.colors.secondaryColor' => $pickedScheme['secondaryColor']]);
         }

@@ -72,7 +72,7 @@ class EditOwn extends Controller
         $availableColorSchemes = $this->themeCore->getAvailableColorSchemes();
         $userColorScheme = $this->settingsService->getSetting('usersettings.'.$this->userId.'.colorScheme');
         if (! $userColorScheme) {
-            $userColorScheme = isset($availableColorSchemes['companyColors']) ? 'companyColors' : 'themeDefault';
+            $userColorScheme = 'grayscale1';
         }
 
         $themeFont = $this->settingsService->getSetting('usersettings.'.$this->userId.'.themeFont');
@@ -273,7 +273,7 @@ class EditOwn extends Controller
 
                 $postTheme = htmlentities($_POST['theme'] ?? 'default');
                 $postColorMode = htmlentities($_POST['colormode'] ?? 'light');
-                $postColorScheme = htmlentities($_POST['colorscheme'] ?? 'themeDefault');
+                $postColorScheme = htmlentities($_POST['colorscheme'] ?? 'grayscale1');
                 $themeFont = htmlentities($_POST['themeFont']);
 
                 $this->settingsService->saveSetting('usersettings.'.$this->userId.'.theme', $postTheme);

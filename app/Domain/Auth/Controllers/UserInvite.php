@@ -77,7 +77,7 @@ class UserInvite extends Controller
 
             $userColorScheme = $this->settingService->getSetting('usersettings.'.$user['id'].'.colorScheme');
             if (! $userColorScheme) {
-                $userColorScheme = 'companyColors';
+                $userColorScheme = 'grayscale1';
             }
 
             $themeFont = $this->settingService->getSetting('usersettings.'.$user['id'].'.themeFont');
@@ -258,7 +258,7 @@ class UserInvite extends Controller
         if (isset($_POST['step']) && $_POST['step'] == 3) {
 
             $postColorMode = htmlentities($_POST['colormode']);
-            $postColorScheme = htmlentities($_POST['colorscheme'] ?? 'themeDefault');
+            $postColorScheme = htmlentities($_POST['colorscheme'] ?? 'grayscale1');
 
             $this->settingService->saveSetting('usersettings.'.$userInvite['id'].'.colorMode', $postColorMode);
             $this->settingService->saveSetting('usersettings.'.$userInvite['id'].'.colorScheme', $postColorScheme);

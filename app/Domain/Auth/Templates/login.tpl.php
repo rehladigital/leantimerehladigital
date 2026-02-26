@@ -59,7 +59,7 @@ $redirectUrl = $tpl->get('redirectUrl');
             </div>
             <a href="<?= BASE_URL ?>/oidc/login" style="width:100%;" class="btn btn-primary">
                 <span class="fa-brands fa-microsoft" style="margin-right:8px;"></span>
-                <?php echo $tpl->language->__('buttons.microsoft_login'); ?>
+                Login with SSO
             </a>
         </div>
     <?php } ?>
