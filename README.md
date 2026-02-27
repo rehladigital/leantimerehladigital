@@ -52,17 +52,43 @@ Website: [https://rehladigital.com](https://rehladigital.com)
 3. Point web root to `public/`
 4. Open `/install` and complete setup
 
-## Hostinger deployment
+## Hostinger shared hosting (validated)
 
-- Deployment source path: `/home/<user>/domains/<domain>/public_html/<app-folder>`
-- Domain URL: `https://<your-domain>`
-- Document root for the domain/subdomain: `/home/<user>/domains/<domain>/public_html/<app-folder>/public`
-- Keep runtime environment file at:
-  - `/home/<user>/domains/<domain>/public_html/<app-folder>/.env`
-  - or `/home/<user>/domains/<domain>/public_html/<app-folder>/config/.env`
-- Required app URL value in env: `LEAN_APP_URL=https://<your-domain>`
-- One-command update on server:
-  - `bash scripts/hostinger-deploy.sh`
+Great news: this app is confirmed to run on Hostinger shared hosting (no root access) with full UI assets and OIDC flow.
+
+### Exact deployment steps
+
+1. Create a subdomain/domain in Hostinger (example: `pm.example.com`).
+2. Upload the repository to:
+   - `/home/<user>/domains/<domain>/public_html/<app-folder>`
+3. In Hostinger PHP settings, use PHP `8.2+` (recommended `8.3`).
+4. Create `config/.env` (or `<app-folder>/.env`) with your DB + app settings:
+   - `LEAN_APP_URL='https://<your-domain>'`
+   - `LEAN_DB_DEFAULT_CONNECTION='mysql'`
+   - `LEAN_DB_HOST`, `LEAN_DB_DATABASE`, `LEAN_DB_USER`, `LEAN_DB_PASSWORD`, `LEAN_DB_PORT`
+   - `LEAN_SESSION_PASSWORD='<random-strong-value>'`
+   - OIDC values if SSO is required (`LEAN_OIDC_ENABLE`, `LEAN_OIDC_CLIENT_ID`, `LEAN_OIDC_CLIENT_SECRET`, `LEAN_OIDC_PROVIDER_URL`)
+5. Ensure root rewrite forwards requests to `public/`:
+   - file: `<app-folder>/.htaccess`
+6. Ensure front controller rewrite is present:
+   - file: `<app-folder>/public/.htaccess`
+7. Install production dependencies:
+   - `php composer.phar install --no-dev --prefer-dist -o --ignore-platform-reqs`
+8. Clear runtime caches:
+   - `/opt/alt/php83/usr/bin/php bin/leantime cache:clearAll`
+9. Confirm static assets are present and directly accessible:
+   - `<app-folder>/public/dist/**`
+   - `<app-folder>/public/theme/**`
+   - URLs like `https://<your-domain>/dist/css/main.3.7.1.min.css` must return `200`
+10. Open `https://<your-domain>/auth/login` and complete login/install verification.
+
+### Post-deploy verification checklist
+
+- `GET /auth/login` returns `200`
+- `GET /dist/css/main.3.7.1.min.css` returns `200`
+- `GET /dist/js/compiled-frameworks.3.7.1.min.js` returns `200`
+- OIDC start endpoint redirects to your provider
+- Successful login reaches `/dashboard/home`
 
 ## Setup helper files
 
