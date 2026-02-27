@@ -5,6 +5,15 @@ on:
     branches:
       - prod
   workflow_dispatch:
+    inputs:
+      full_replace:
+        description: "One-time full file replace (mirror) instead of delta sync"
+        required: false
+        default: "false"
+      run_db_update:
+        description: "Run database update command after deploy"
+        required: false
+        default: "true"
 
 concurrency:
   group: deploy-prod-branch
@@ -30,6 +39,7 @@ jobs:
           sudo apt-get install -y lftp sshpass
 
       - name: Build deployment change set
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.full_replace == 'true') }}
         run: |
           set -euo pipefail
 
@@ -59,7 +69,39 @@ jobs:
             sed 's/^/  - /' /tmp/delete_files.txt
           fi
 
+      - name: One-time full sync to production (SFTP mirror)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_replace == 'true' }}
+        env:
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_PORT: ${{ secrets.PROD_PORT }}
+          PROD_USER: ${{ secrets.PROD_USER }}
+          PROD_PASSWORD: ${{ secrets.PROD_PASSWORD }}
+          PROD_REMOTE_PATH: ${{ secrets.PROD_REMOTE_PATH }}
+        run: |
+          set -euo pipefail
+          lftp -c "
+          set sftp:auto-confirm yes;
+          open -u \"$PROD_USER\",\"$PROD_PASSWORD\" sftp://$PROD_HOST:$PROD_PORT;
+          mirror -R --delete --only-newer --verbose=1 --parallel=2 \
+            --exclude-glob .git/ \
+            --exclude-glob .github/ \
+            --exclude-glob .cursor/ \
+            --exclude-glob .claude/ \
+            --exclude-glob .idea/ \
+            --exclude-glob node_modules/ \
+            --exclude-glob vendor/ \
+            --exclude-glob storage/ \
+            --exclude-glob userfiles/ \
+            --exclude-glob config/.env \
+            --exclude-glob '*.log' \
+            --exclude-glob '*.sqlite' \
+            --exclude-glob '*.db' \
+            --exclude-glob '*.db-journal' \
+            ./ $PROD_REMOTE_PATH;
+          bye"
+
       - name: Sync changed files to production (SFTP delta)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.full_replace == 'true') }}
         env:
           PROD_HOST: ${{ secrets.PROD_HOST }}
           PROD_PORT: ${{ secrets.PROD_PORT }}
@@ -111,6 +153,7 @@ jobs:
           PROD_USER: ${{ secrets.PROD_USER }}
           PROD_PASSWORD: ${{ secrets.PROD_PASSWORD }}
           PROD_REMOTE_PATH: ${{ secrets.PROD_REMOTE_PATH }}
+          RUN_DB_UPDATE: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_db_update == 'true') && 'true' || 'false' }}
         run: |
           sshpass -p "$PROD_PASSWORD" ssh -o StrictHostKeyChecking=no -p "$PROD_PORT" "$PROD_USER@$PROD_HOST" "
             set -e;
@@ -120,6 +163,9 @@ jobs:
             else
               echo 'composer.phar not found in deploy path';
               exit 1;
+            fi;
+            if [ '$RUN_DB_UPDATE' = 'true' ]; then
+              /opt/alt/php83/usr/bin/php bin/leantime system:update;
             fi;
             /opt/alt/php83/usr/bin/php bin/leantime cache:clearAll;
             echo 'Remote post-deploy commands completed successfully';
