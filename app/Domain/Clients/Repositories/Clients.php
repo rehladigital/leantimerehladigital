@@ -7,6 +7,7 @@
 namespace Leantime\Domain\Clients\Repositories;
 
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Support\Facades\Schema;
 use Leantime\Core\Db\DatabaseHelper;
 use Leantime\Core\Db\Db as DbCore;
 use Leantime\Core\Db\Repository;
@@ -122,7 +123,7 @@ class Clients extends Repository
 
     public function getClientsUsers(int|string $clientId): false|array
     {
-        $results = $this->db->table('zp_user')
+        $query = $this->db->table('zp_user')
             ->select(
                 'id',
                 'firstname',
@@ -133,12 +134,23 @@ class Clients extends Repository
                 'phone',
                 'status'
             )
-            ->where('clientId', $clientId)
+            ->where(function ($query) use ($clientId) {
+                $query->where('zp_user.clientId', $clientId);
+                if (Schema::hasTable('zp_relationuserclient')) {
+                    $query->orWhereExists(function ($subQuery) use ($clientId) {
+                        $subQuery->selectRaw('1')
+                            ->from('zp_relationuserclient')
+                            ->whereColumn('zp_relationuserclient.userId', 'zp_user.id')
+                            ->where('zp_relationuserclient.clientId', $clientId);
+                    });
+                }
+            })
             ->where(function ($query) {
                 $query->whereNull('source')
                     ->orWhere('source', '!=', 'api');
-            })
-            ->get();
+            });
+
+        $results = $query->distinct()->get();
 
         return array_map(fn ($item) => (array) $item, $results->toArray());
     }

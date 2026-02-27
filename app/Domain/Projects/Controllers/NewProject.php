@@ -60,11 +60,16 @@ class NewProject extends Controller
         }
 
         $msgKey = '';
+        $currentUserClientIds = $this->userRepo->getUserClientIds((int) (session('userdata.id') ?? 0));
+        $fallbackClientId = (int) (session('userdata.clientId') ?? 0);
+        if (count($currentUserClientIds) === 0 && $fallbackClientId > 0) {
+            $currentUserClientIds = [$fallbackClientId];
+        }
         $values = [
             'id' => '',
             'name' => '',
             'details' => '',
-            'clientId' => (int) (session('userdata.clientId') ?? 0),
+            'clientId' => (int) ($currentUserClientIds[0] ?? 0),
             'hourBudget' => '',
             'assignedUsers' => [session('userdata.id')],
             'dollarBudget' => '',
@@ -110,10 +115,11 @@ class NewProject extends Controller
             ];
 
             $userRole = (string) (session('userdata.role') ?? '');
-            $currentUserClientId = (int) (session('userdata.clientId') ?? 0);
-            if ($userRole === Roles::$manager && $currentUserClientId > 0) {
-                // Client manager should always create projects under their assigned client.
-                $values['clientId'] = $currentUserClientId;
+            if ($userRole === Roles::$manager) {
+                // Client managers can only create projects for their mapped clients.
+                if (! in_array((int) $values['clientId'], $currentUserClientIds, true)) {
+                    $values['clientId'] = (int) ($currentUserClientIds[0] ?? 0);
+                }
             }
 
             if ($values['name'] === '') {
@@ -176,19 +182,12 @@ class NewProject extends Controller
         $this->tpl->assign('availableUsers', $this->userRepo->getAll());
         $clients = $this->clientsRepo->getAll();
         $userRole = (string) (session('userdata.role') ?? '');
-        $currentUserClientId = (int) (session('userdata.clientId') ?? 0);
-        if ($userRole === Roles::$manager && $currentUserClientId > 0) {
-            $ownClient = $this->clientsRepo->getClient($currentUserClientId);
-            if (is_array($ownClient)) {
-                $clients = [[
-                    'id' => $ownClient['id'],
-                    'name' => $ownClient['name'],
-                    'internet' => $ownClient['internet'] ?? '',
-                    'numberOfProjects' => $ownClient['numberOfProjects'] ?? 0,
-                ]];
-                $values['clientId'] = $ownClient['id'];
-                $this->tpl->assign('project', $values);
-            }
+        if ($userRole === Roles::$manager && count($currentUserClientIds) > 0) {
+            $clients = array_values(array_filter($clients, function (array $client) use ($currentUserClientIds): bool {
+                return in_array((int) ($client['id'] ?? 0), $currentUserClientIds, true);
+            }));
+            $values['clientId'] = (int) ($values['clientId'] ?: ($currentUserClientIds[0] ?? 0));
+            $this->tpl->assign('project', $values);
         }
         $this->tpl->assign('clients', $clients);
         $this->tpl->assign('projectTypes', $this->projectService->getProjectTypes());

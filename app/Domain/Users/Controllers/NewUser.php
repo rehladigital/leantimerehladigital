@@ -69,11 +69,17 @@ class NewUser extends Controller
             'role' => '',
             'password' => '',
             'clientId' => '',
+            'clientIds' => [],
             'jobTitle' => '',
             'jobLevel' => '',
             'department' => '',
 
         ];
+
+        if (Auth::userHasRole(Roles::$manager)) {
+            $values['clientIds'] = $this->userRepo->getUserClientIds((int) session('userdata.id'));
+            $values['clientId'] = $values['clientIds'][0] ?? (int) (session('userdata.clientId') ?? 0);
+        }
 
         // only Admins
         if (Auth::userIsAtLeast(Roles::$manager)) {
@@ -92,8 +98,34 @@ class NewUser extends Controller
                     'jobTitle' => ($_POST['jobTitle']),
                     'jobLevel' => ($_POST['jobLevel']),
                     'department' => ($_POST['department']),
-                    'clientId' => Auth::userHasRole(Roles::$manager) ? session('userdata.clientId') : $_POST['client'],
+                    'clientId' => 0,
+                    'clientIds' => [],
                 ];
+
+                $postedClientIds = isset($_POST['clients']) && is_array($_POST['clients']) ? $_POST['clients'] : [];
+                if (count($postedClientIds) === 0 && isset($_POST['client'])) {
+                    $postedClientIds = [$_POST['client']];
+                }
+
+                $normalizedClientIds = [];
+                foreach ($postedClientIds as $clientId) {
+                    $id = (int) $clientId;
+                    if ($id > 0) {
+                        $normalizedClientIds[] = $id;
+                    }
+                }
+                $normalizedClientIds = array_values(array_unique($normalizedClientIds));
+
+                if (Auth::userHasRole(Roles::$manager)) {
+                    $managerClientIds = $this->userRepo->getUserClientIds((int) session('userdata.id'));
+                    $normalizedClientIds = array_values(array_intersect($normalizedClientIds, $managerClientIds));
+                    if (count($normalizedClientIds) === 0) {
+                        $normalizedClientIds = $managerClientIds;
+                    }
+                }
+
+                $values['clientIds'] = $normalizedClientIds;
+                $values['clientId'] = count($normalizedClientIds) > 0 ? $normalizedClientIds[0] : 0;
                 if (isset($_POST['projects']) && is_array($_POST['projects'])) {
                     foreach ($_POST['projects'] as $project) {
                         $projectrelation[] = $project;
@@ -140,9 +172,14 @@ class NewUser extends Controller
             $preSelectedClient = '';
             if (isset($_GET['preSelectedClient'])) {
                 $preSelectedClient = (int) $_GET['preSelectedClient'];
+                if ($preSelectedClient > 0 && ! in_array($preSelectedClient, $values['clientIds'], true)) {
+                    $values['clientIds'][] = $preSelectedClient;
+                }
             }
 
             $this->tpl->assign('preSelectedClient', $preSelectedClient);
+            $this->tpl->assign('managerClientIds', $this->userRepo->getUserClientIds((int) session('userdata.id')));
+            $this->tpl->assign('values', $values);
             $this->tpl->assign('clients', $clients->getAll());
             $this->tpl->assign('allProjects', $this->projectsRepo->getAll());
             $this->tpl->assign('roles', Roles::getRoles());

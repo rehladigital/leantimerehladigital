@@ -32,6 +32,11 @@ class Home extends Controller
      */
     public function get(): Response
     {
+        $nonVisualDesktopEnabled = $this->settingsSvc->getSetting('usersettings.'.session('userdata.id').'.nonVisualDesktop');
+        if (in_array(strtolower((string) $nonVisualDesktopEnabled), ['1', 'true', 'on', 'yes'], true)) {
+            return Frontcontroller::redirect(BASE_URL.'/dashboard/nonVisualDesktop');
+        }
+
         // Debug uncomment to reset dashboard
         if (isset($_GET['resetDashboard']) === true) {
             $this->widgetService->resetDashboard(session('userdata.id'));

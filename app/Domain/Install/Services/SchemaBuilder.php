@@ -39,6 +39,7 @@ class SchemaBuilder
         $this->createProjectsTable();
         $this->createPunchClockTable();
         $this->createReadTable();
+        $this->createRelationUserClientTable();
         $this->createRelationUserProjectTable();
         $this->createTicketHistoryTable();
         $this->createTicketsTable();
@@ -384,6 +385,22 @@ class SchemaBuilder
             $table->integer('userId')->nullable();
 
             $table->index(['userId', 'module', 'moduleId'], 'idx_read_userId_module_moduleId');
+        });
+    }
+
+    /**
+     * Create zp_relationuserclient table (junction table for user-client relationships).
+     */
+    private function createRelationUserClientTable(): void
+    {
+        Schema::create('zp_relationuserclient', function (Blueprint $table) {
+            $table->id();
+            $table->integer('userId')->nullable();
+            $table->integer('clientId')->nullable();
+
+            $table->index(['userId'], 'idx_relationuserclient_userId');
+            $table->index(['clientId'], 'idx_relationuserclient_clientId');
+            $table->index(['userId', 'clientId'], 'idx_relationuserclient_userId_clientId');
         });
     }
 

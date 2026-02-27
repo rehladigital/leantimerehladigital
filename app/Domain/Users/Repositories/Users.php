@@ -4,6 +4,7 @@ namespace Leantime\Domain\Users\Repositories;
 
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Support\Facades\Schema;
 use Leantime\Core\Configuration\Environment;
 use Leantime\Core\Db\DatabaseHelper;
 use Leantime\Core\Db\Db as DbCore;
@@ -34,6 +35,8 @@ class Users
 
     public array $status = ['active' => 'label.active', 'inactive' => 'label.inactive', 'invited' => 'label.invited'];
 
+    private ?bool $userClientRelationTableExists = null;
+
     /**
      * __construct - neu db connection
      */
@@ -57,6 +60,36 @@ class Users
             ->first();
 
         return $result ? (array) $result : false;
+    }
+
+    public function getUserClientIds(int $userId): array
+    {
+        $legacyUser = $this->getUser($userId);
+        $legacyClientId = (int) ($legacyUser['clientId'] ?? 0);
+
+        if (! $this->hasUserClientRelationTable()) {
+            return $legacyClientId > 0 ? [$legacyClientId] : [];
+        }
+
+        $rows = $this->connection->table('zp_relationuserclient')
+            ->select('clientId')
+            ->where('userId', $userId)
+            ->orderBy('clientId')
+            ->get();
+
+        $clientIds = [];
+        foreach ($rows as $row) {
+            $id = (int) ($row->clientId ?? 0);
+            if ($id > 0) {
+                $clientIds[] = $id;
+            }
+        }
+
+        if (count($clientIds) === 0 && $legacyClientId > 0) {
+            return [$legacyClientId];
+        }
+
+        return array_values(array_unique($clientIds));
     }
 
     /**
@@ -226,7 +259,7 @@ class Users
      */
     public function getAllClientUsers($clientId): array
     {
-        $results = $this->connection->table('zp_user')
+        $query = $this->connection->table('zp_user')
             ->select([
                 'zp_user.id',
                 'lastname',
@@ -243,9 +276,20 @@ class Users
                 'modified',
             ])
             ->leftJoin('zp_clients', 'zp_clients.id', '=', 'zp_user.clientId')
-            ->where('clientId', $clientId)
-            ->orderBy('lastname')
-            ->get();
+            ->where(function ($query) use ($clientId) {
+                $query->where('zp_user.clientId', $clientId);
+                if ($this->hasUserClientRelationTable()) {
+                    $query->orWhereExists(function ($subQuery) use ($clientId) {
+                        $subQuery->selectRaw('1')
+                            ->from('zp_relationuserclient')
+                            ->whereColumn('zp_relationuserclient.userId', 'zp_user.id')
+                            ->where('zp_relationuserclient.clientId', $clientId);
+                    });
+                }
+            })
+            ->orderBy('lastname');
+
+        $results = $query->get();
 
         return array_map(fn ($item) => (array) $item, $results->toArray());
     }
@@ -290,10 +334,16 @@ class Users
             $updateData['password'] = password_hash($values['password'], PASSWORD_DEFAULT);
         }
 
-        return $this->connection->table('zp_user')
+        $updated = $this->connection->table('zp_user')
             ->where('id', $id)
             ->limit(1)
             ->update($updateData);
+
+        if (isset($values['clientIds']) && is_array($values['clientIds'])) {
+            $this->setUserClientRelations((int) $id, $values['clientIds']);
+        }
+
+        return $updated;
     }
 
     /**
@@ -379,7 +429,71 @@ class Users
             'modified' => now(),
         ]);
 
+        if ($userId !== false && isset($values['clientIds']) && is_array($values['clientIds'])) {
+            $this->setUserClientRelations((int) $userId, $values['clientIds']);
+        }
+
         return $userId !== false ? (string) $userId : false;
+    }
+
+    public function setUserClientRelations(int $userId, array $clientIds): void
+    {
+        $normalizedClientIds = $this->normalizeClientIds($clientIds);
+        $primaryClientId = count($normalizedClientIds) > 0 ? $normalizedClientIds[0] : 0;
+
+        $this->connection->table('zp_user')
+            ->where('id', $userId)
+            ->limit(1)
+            ->update([
+                'clientId' => $primaryClientId,
+                'modified' => now(),
+            ]);
+
+        if (! $this->hasUserClientRelationTable()) {
+            return;
+        }
+
+        $this->connection->table('zp_relationuserclient')
+            ->where('userId', $userId)
+            ->delete();
+
+        foreach ($normalizedClientIds as $clientId) {
+            $this->connection->table('zp_relationuserclient')->insert([
+                'userId' => $userId,
+                'clientId' => $clientId,
+            ]);
+        }
+    }
+
+    private function hasUserClientRelationTable(): bool
+    {
+        if ($this->userClientRelationTableExists !== null) {
+            return $this->userClientRelationTableExists;
+        }
+
+        try {
+            $this->userClientRelationTableExists = Schema::hasTable('zp_relationuserclient');
+        } catch (\Throwable $e) {
+            $this->userClientRelationTableExists = false;
+        }
+
+        return $this->userClientRelationTableExists;
+    }
+
+    private function normalizeClientIds(array $clientIds): array
+    {
+        $normalized = [];
+        foreach ($clientIds as $clientId) {
+            $id = (int) $clientId;
+            if ($id > 0) {
+                $normalized[] = $id;
+            }
+        }
+
+        $normalized = array_values(array_unique($normalized));
+        sort($normalized);
+
+        return $normalized;
     }
 
     /**

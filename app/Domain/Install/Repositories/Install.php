@@ -80,6 +80,7 @@ class Install
         30412,
         30413,
         30500,
+        30510,
     ];
 
     /**
@@ -2468,6 +2469,55 @@ class Install
             } catch (\Exception $e) {
                 Log::error("Migration 30500: Failed to add index {$index['name']} on {$index['table']}: ".$e->getMessage());
             }
+        }
+
+        return true;
+    }
+
+    /**
+     * Create user-client relation table for multi-client user mapping.
+     */
+    public function update_sql_30510(): bool|array
+    {
+        try {
+            if (! Schema::hasTable('zp_relationuserclient')) {
+                Schema::create('zp_relationuserclient', function (Blueprint $table) {
+                    $table->id();
+                    $table->integer('userId')->nullable();
+                    $table->integer('clientId')->nullable();
+                    $table->index(['userId'], 'idx_relationuserclient_userId');
+                    $table->index(['clientId'], 'idx_relationuserclient_clientId');
+                    $table->index(['userId', 'clientId'], 'idx_relationuserclient_userId_clientId');
+                });
+            }
+
+            $rows = $this->connection->table('zp_user')
+                ->select('id', 'clientId')
+                ->whereNotNull('clientId')
+                ->where('clientId', '>', 0)
+                ->get();
+
+            foreach ($rows as $row) {
+                $userId = (int) ($row->id ?? 0);
+                $clientId = (int) ($row->clientId ?? 0);
+                if ($userId <= 0 || $clientId <= 0) {
+                    continue;
+                }
+
+                $exists = $this->connection->table('zp_relationuserclient')
+                    ->where('userId', $userId)
+                    ->where('clientId', $clientId)
+                    ->exists();
+
+                if (! $exists) {
+                    $this->connection->table('zp_relationuserclient')->insert([
+                        'userId' => $userId,
+                        'clientId' => $clientId,
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::error('Migration 30510: '.$e->getMessage());
         }
 
         return true;

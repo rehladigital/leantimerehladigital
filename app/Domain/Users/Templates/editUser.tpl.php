@@ -87,16 +87,18 @@ $projects = $tpl->get('relations');
                         <?php } ?>
                         <div class="clearfix"></div>
 
+                    <label for="nonVisualDesktop">Non Visual Desktop</label>
+                    <label style="display:inline-flex; align-items:center; gap:8px; margin-bottom:12px;">
+                        <input type="checkbox" name="nonVisualDesktop" id="nonVisualDesktop" value="1" <?= ! empty($values['nonVisualDesktop']) ? 'checked="checked"' : '' ?> />
+                        Enable simplified combined desktop screen for this user.
+                    </label>
 
 
 
-                    <label for="client"><?php echo $tpl->__('label.client') ?></label>
-                    <select name='client' id="client">
-                        <?php if ($login::userIsAtLeast('manager')) {?>
-                            <option value="0" selected="selected"><?php echo $tpl->__('label.no_clients') ?></option>
-                        <?php } ?>
+                    <label for="clients"><?php echo $tpl->__('label.client') ?></label>
+                    <select name='clients[]' id="clients" multiple="multiple" size="6">
                         <?php foreach ($tpl->get('clients') as $client) { ?>
-                            <option value="<?php echo $client['id'] ?>" <?php if ($client['id'] == $values['clientId']) {
+                            <option value="<?php echo $client['id'] ?>" <?php if (in_array((int) $client['id'], array_map('intval', $values['clientIds'] ?? []), true)) {
                                 ?>selected="selected"<?php
                             } ?>><?php $tpl->e($client['name']) ?></option>
                         <?php } ?>

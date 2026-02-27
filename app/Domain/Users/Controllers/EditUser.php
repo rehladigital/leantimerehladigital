@@ -8,6 +8,7 @@ use Leantime\Domain\Auth\Models\Roles;
 use Leantime\Domain\Auth\Services\Auth;
 use Leantime\Domain\Clients\Repositories\Clients as ClientRepository;
 use Leantime\Domain\Projects\Repositories\Projects as ProjectRepository;
+use Leantime\Domain\Setting\Services\Setting as SettingService;
 use Leantime\Domain\Users\Repositories\Users as UserRepository;
 use Leantime\Domain\Users\Services\Users;
 use Ramsey\Uuid\Uuid;
@@ -22,6 +23,8 @@ class EditUser extends Controller
 
     private Users $userService;
 
+    private SettingService $settingsService;
+
     /**
      * init - initialize private variables
      */
@@ -29,12 +32,14 @@ class EditUser extends Controller
         ProjectRepository $projectsRepo,
         UserRepository $userRepo,
         ClientRepository $clientsRepo,
-        Users $userService
+        Users $userService,
+        SettingService $settingsService
     ) {
         $this->projectsRepo = $projectsRepo;
         $this->userRepo = $userRepo;
         $this->clientsRepo = $clientsRepo;
         $this->userService = $userService;
+        $this->settingsService = $settingsService;
     }
 
     /**
@@ -65,13 +70,17 @@ class EditUser extends Controller
                 'hours' => $row['hours'],
                 'wage' => $row['wage'],
                 'clientId' => $row['clientId'],
+                'clientIds' => $this->userRepo->getUserClientIds($id),
                 'source' => $row['source'],
                 'pwReset' => $row['pwReset'],
                 'jobTitle' => $row['jobTitle'],
                 'jobLevel' => $row['jobLevel'],
                 'department' => $row['department'],
-
+                'nonVisualDesktop' => false,
             ];
+
+            $nonVisualSetting = $this->settingsService->getSetting('usersettings.'.$id.'.nonVisualDesktop');
+            $values['nonVisualDesktop'] = in_array(strtolower((string) $nonVisualSetting), ['1', 'true', 'on', 'yes'], true);
 
             if (isset($_GET['resendInvite']) && $row !== false) {
                 if (! session()->exists('lastInvite.'.$values['id']) ||
@@ -111,12 +120,30 @@ class EditUser extends Controller
                         'hours' => ($_POST['hours'] ?? $row['hours']),
                         'wage' => ($_POST['wage'] ?? $row['wage']),
                         'clientId' => ($_POST['client'] ?? $row['clientId']),
+                        'clientIds' => [],
                         'source' => $row['source'],
                         'pwReset' => $row['pwReset'],
                         'jobTitle' => ($_POST['jobTitle'] ?? $row['jobTitle']),
                         'jobLevel' => ($_POST['jobLevel'] ?? $row['jobLevel']),
                         'department' => ($_POST['department'] ?? $row['department']),
                     ];
+
+                    $postedClientIds = isset($_POST['clients']) && is_array($_POST['clients']) ? $_POST['clients'] : [];
+                    if (count($postedClientIds) === 0 && isset($_POST['client'])) {
+                        $postedClientIds = [$_POST['client']];
+                    }
+
+                    $normalizedClientIds = [];
+                    foreach ($postedClientIds as $clientId) {
+                        $parsedClientId = (int) $clientId;
+                        if ($parsedClientId > 0) {
+                            $normalizedClientIds[] = $parsedClientId;
+                        }
+                    }
+                    $normalizedClientIds = array_values(array_unique($normalizedClientIds));
+
+                    $values['clientIds'] = $normalizedClientIds;
+                    $values['clientId'] = count($normalizedClientIds) > 0 ? $normalizedClientIds[0] : 0;
 
                     $changedEmail = 0;
 
@@ -153,6 +180,8 @@ class EditUser extends Controller
             // Was everything okay?
             if ($edit !== false) {
                 $this->userRepo->editUser($values, $id);
+                $nonVisualEnabled = isset($_POST['nonVisualDesktop']) ? '1' : '0';
+                $this->settingsService->saveSetting('usersettings.'.$id.'.nonVisualDesktop', $nonVisualEnabled);
 
                 if (isset($_POST['projects'])) {
                     if ($_POST['projects'][0] !== '0') {

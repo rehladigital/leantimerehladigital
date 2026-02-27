@@ -12,6 +12,11 @@
 <meta name="identifier-URL" content="{!! BASE_URL !!}">
 <meta name="product-version" content="{{ $version }}">
 
+@php
+    $moduleName = \Leantime\Core\Controller\Frontcontroller::getModuleName();
+    $isLightweightEntry = in_array($moduleName, ['auth', 'oidc', 'install', 'twoFA'], true);
+@endphp
+
 @dispatchEvent('afterMetaTags')
 
 <link rel="shortcut icon" href="{!! BASE_URL !!}/assets/images/favicon.png"/>
@@ -19,7 +24,7 @@
 
 <link rel="stylesheet" href="{!! BASE_URL !!}/dist/css/main.{!! $version !!}.min.css"/>
 <link rel="stylesheet" href="{!! BASE_URL !!}/dist/css/app.{!! $version !!}.min.css"/>
-@if($tpl->needsComponent('tiptap'))
+@if(!$isLightweightEntry && $tpl->needsComponent('tiptap'))
 <link rel="stylesheet" href="{!! BASE_URL !!}/dist/css/tiptap-editor.{!! $version !!}.min.css"/>
 <link rel="stylesheet" href="{!! BASE_URL !!}/dist/css/katex.min.css"/>
 @endif
@@ -35,20 +40,20 @@
 <script src="{!! BASE_URL !!}/dist/js/compiled-frameworks.{!! $version !!}.min.js"></script>
 <script src="{!! BASE_URL !!}/dist/js/compiled-framework-plugins.{!! $version !!}.min.js"></script>
 <script src="{!! BASE_URL !!}/dist/js/compiled-global-component.{!! $version !!}.min.js"></script>
-@if($tpl->needsComponent('calendar'))
+@if(!$isLightweightEntry && $tpl->needsComponent('calendar'))
 <script src="{!! BASE_URL !!}/dist/js/compiled-calendar-component.{!! $version !!}.min.js"></script>
 @endif
-@if($tpl->needsComponent('table'))
+@if(!$isLightweightEntry && $tpl->needsComponent('table'))
 <script src="{!! BASE_URL !!}/dist/js/compiled-table-component.{!! $version !!}.min.js"></script>
 @endif
-@if($tpl->needsComponent('tiptap'))
+@if(!$isLightweightEntry && $tpl->needsComponent('tiptap'))
 <script src="{!! BASE_URL !!}/dist/js/compiled-tiptap-toolbar.{!! $version !!}.min.js"></script>
 <script src="{!! BASE_URL !!}/dist/js/compiled-tiptap-editor.{!! $version !!}.min.js"></script>
 @endif
-@if($tpl->needsComponent('gantt'))
+@if(!$isLightweightEntry && $tpl->needsComponent('gantt'))
 <script src="{!! BASE_URL !!}/dist/js/compiled-gantt-component.{!! $version !!}.min.js"></script>
 @endif
-@if($tpl->needsComponent('chart'))
+@if(!$isLightweightEntry && $tpl->needsComponent('chart'))
 <script src="{!! BASE_URL !!}/dist/js/compiled-chart-component.{!! $version !!}.min.js"></script>
 @endif
 

@@ -6,6 +6,7 @@ foreach ($__data as $var => $val) {
 $roles = $tpl->get('roles');
 $values = $tpl->get('values');
 $projects = $tpl->get('relations');
+$managerClientIds = $tpl->get('managerClientIds') ?? [session('userdata.clientId')];
 ?>
 
 <script type="text/javascript">
@@ -101,18 +102,15 @@ $projects = $tpl->get('relations');
 
             </select> <br />
 
-            <label for="client"><?php echo $tpl->__('label.client') ?></label>
-            <select name='client' id="client">
-                <?php if ($login::userIsAtLeast('admin')) {?>
-                    <option value="0" selected="selected"><?php echo $tpl->__('label.no_clients') ?></option>
-                <?php } ?>
+            <label for="clients"><?php echo $tpl->__('label.client') ?></label>
+            <select name='clients[]' id="clients" multiple="multiple" size="6">
                 <?php foreach ($tpl->get('clients') as $client) { ?>
-                    <?php if ($login::userHasRole(\Leantime\Domain\Auth\Models\Roles::$manager) && $client['id'] !== session('userdata.clientId')) {
+                    <?php if ($login::userHasRole(\Leantime\Domain\Auth\Models\Roles::$manager) && ! in_array((int) $client['id'], array_map('intval', $managerClientIds), true)) {
                         continue;
                     }
                     ?>
                     <option value="<?php echo $client['id'] ?>"
-                            <?php if ($client['id'] == $values['clientId'] || $tpl->get('preSelectedClient') == $client['id']) {
+                            <?php if (in_array((int) $client['id'], array_map('intval', $values['clientIds'] ?? []), true) || $tpl->get('preSelectedClient') == $client['id']) {
                                 ?>selected="selected"<?php
                             } ?>><?php $tpl->e($client['name']) ?></option>
                 <?php } ?>
@@ -157,7 +155,7 @@ $projects = $tpl->get('relations');
                     $currentClient = '';
 $i = 0;
 foreach ($tpl->get('allProjects') as $row) {
-    if ($login::userHasRole(\Leantime\Domain\Auth\Models\Roles::$manager) && $row['clientId'] !== session('userdata.clientId')) {
+    if ($login::userHasRole(\Leantime\Domain\Auth\Models\Roles::$manager) && ! in_array((int) $row['clientId'], array_map('intval', $managerClientIds), true)) {
         continue;
     }
 

@@ -94,6 +94,7 @@ class Menu
         ],
         'personal' => [
             5 => ['type' => 'item', 'module' => 'dashboard', 'title' => 'menu.sidemenu_home', 'icon' => 'fa fa-house', 'tooltip' => 'menu.overview_tooltip', 'href' => '/dashboard/home', 'active' => ['home']],
+            6 => ['type' => 'item', 'module' => 'dashboard', 'title' => 'menu.sidemenu_non_visual_desktop', 'icon' => 'fa fa-list', 'tooltip' => 'menu.sidemenu_non_visual_desktop_tooltip', 'href' => '/dashboard/nonVisualDesktop', 'active' => ['nonVisualDesktop'], 'role' => 'readonly', 'requiresSetting' => 'nonVisualDesktop'],
             7 => ['type' => 'item', 'module' => 'projects', 'title' => 'menu.sidemenu_my_project_hub', 'icon' => 'fa fa-solid fa-house-flag', 'tooltip' => 'menu.projecthub_tooltip', 'href' => '/projects/showMy', 'active' => ['showMy'], 'role' => 'editor'],
             15 => ['type' => 'item', 'module' => 'timesheets', 'role' => 'owner', 'title' => 'menu.sidemenu_my_timesheets', 'icon' => 'fa-clock', 'tooltip' => 'menu.my_timesheets_tooltip', 'href' => '/timesheets/showMy', 'active' => ['showMy']],
             20 => ['type' => 'item', 'module' => 'calendar', 'title' => 'menu.sidemenu_my_calendar', 'icon' => 'fa fa-calendar', 'tooltip' => 'menu.my_calendar_tooltip', 'href' => '/calendar/showMyCalendar', 'active' => ['showMyCalendar']],
@@ -359,6 +360,15 @@ class Menu
             }
         }
 
+        if (isset($element['requiresSetting']) && session()->exists('userdata.id')) {
+            $settingKey = 'usersettings.'.session('userdata.id').'.'.$element['requiresSetting'];
+            $settingValue = $this->settingsRepo->getSetting($settingKey);
+            $enabled = in_array(strtolower((string) $settingValue), ['1', 'true', 'on', 'yes'], true);
+            if (! $enabled) {
+                $structure['type'] = 'disabled';
+            }
+        }
+
     }
 
     /**
@@ -418,6 +428,7 @@ class Menu
 
         $sections = [
             'dashboard.home' => 'personal',
+            'dashboard.nonVisualDesktop' => 'personal',
             'projects.showMy' => 'personal',
             'tickets.showKanban' => 'personal',
             'timesheets.showMy' => 'personal',
