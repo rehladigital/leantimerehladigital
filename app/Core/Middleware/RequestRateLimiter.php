@@ -62,6 +62,12 @@ class RequestRateLimiter
             return $next($request);
         }
 
+        // Never throttle rendering the login page itself.
+        // Only throttle credential submission attempts.
+        if ($route == 'auth.login' && strtoupper((string) $request->getMethod()) !== 'POST') {
+            return $next($request);
+        }
+
         // Configurable rate limits
         $rateLimitGeneral = $this->config->ratelimitGeneral ?? 10000;
         $rateLimitApi = $this->config->ratelimitApi ?? 100;
@@ -94,6 +100,10 @@ class RequestRateLimiter
 
         if ($route == 'auth.login') {
             $limit = $rateLimitAuth;
+            $username = trim((string) ($request->input('username') ?? $_POST['username'] ?? ''));
+            if ($username !== '') {
+                $key .= ':'.md5(strtolower($username));
+            }
             $key = $key.':loginAttempts';
 
         }

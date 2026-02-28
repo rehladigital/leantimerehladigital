@@ -161,14 +161,22 @@ class ShowAll extends Controller
                 $rawRoleByUser = (array) ($params['userBusinessRole'] ?? []);
                 $roleByUser = [];
                 foreach ($rawRoleByUser as $userId => $roleSelection) {
-                    $selected = array_values(array_filter(array_map('intval', (array) $roleSelection)));
-                    if (count($selected) > 1) {
-                        $this->tpl->setNotification('Each user can only have one role.', 'error');
+                    // Support both old checkbox payload (array) and new dropdown payload (scalar).
+                    if (is_array($roleSelection)) {
+                        $selected = array_values(array_filter(array_map('intval', $roleSelection)));
+                        if (count($selected) > 1) {
+                            $this->tpl->setNotification('Each user can only have one role.', 'error');
 
-                        return Frontcontroller::redirect($redirectTo);
-                    }
-                    if (count($selected) === 1) {
-                        $roleByUser[(int) $userId] = $selected[0];
+                            return Frontcontroller::redirect($redirectTo);
+                        }
+                        if (count($selected) === 1) {
+                            $roleByUser[(int) $userId] = $selected[0];
+                        }
+                    } else {
+                        $selectedRoleId = (int) $roleSelection;
+                        if ($selectedRoleId > 0) {
+                            $roleByUser[(int) $userId] = $selectedRoleId;
+                        }
                     }
                 }
 

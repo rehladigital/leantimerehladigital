@@ -77,16 +77,15 @@ $orgRoleNamesByUser = $tpl->get('orgRoleNamesByUser') ?? [];
                         <td>
                             <?php $userId = (int) $row['id']; ?>
                             <?php $mappedRoleId = (int) ($orgUserRoleMap[$userId] ?? 0); ?>
-                            <?php foreach ($orgMappingRoles as $role) { ?>
-                                <?php $roleId = (int) ($role['id'] ?? 0); ?>
-                                <label style="display:block; margin-bottom:2px; font-weight:normal;">
-                                    <input type="checkbox"
-                                           name="userBusinessRole[<?= $userId ?>][]"
-                                           value="<?= $roleId ?>"
-                                           <?= $mappedRoleId === $roleId ? 'checked="checked"' : '' ?> />
-                                    <?= $tpl->escape((string) ($role['name'] ?? '')) ?>
-                                </label>
-                            <?php } ?>
+                            <select name="userBusinessRole[<?= $userId ?>]" style="width:100%; max-width:260px;">
+                                <option value="">-- Select role --</option>
+                                <?php foreach ($orgMappingRoles as $role) { ?>
+                                    <?php $roleId = (int) ($role['id'] ?? 0); ?>
+                                    <option value="<?= $roleId ?>" <?= $mappedRoleId === $roleId ? 'selected="selected"' : '' ?>>
+                                        <?= $tpl->escape((string) ($role['name'] ?? '')) ?>
+                                    </option>
+                                <?php } ?>
+                            </select>
                         </td>
                         <td>
                             <?php $mappedUnitIds = $orgUserUnitMap[$userId] ?? []; ?>
