@@ -311,7 +311,7 @@ class Tickets
             ->leftJoin('zp_user as t2', function ($join) {
                 $join->on('ticket.editorId', '=', $this->connection->raw($this->dbHelper->castAs($this->dbHelper->wrapColumn('t2.id'), 'text')));
             })
-            ->where(function ($q) use ($id, $user) {
+            ->where(function ($q) use ($id, $user, $hasDepartmentTables) {
                 $q->whereIn('ticket.projectId', function ($subquery) use ($id) {
                     $subquery->select('projectId')
                         ->from('zp_relationuserproject')
@@ -487,7 +487,7 @@ class Tickets
                     ->on('er.entityA', '=', 'zp_tickets.id')
                     ->on('er.relationship', '=', $this->connection->raw("'".EntityRelationshipEnum::Collaborator->value."'"));
             })
-            ->where(function ($q) use ($clientId) {
+            ->where(function ($q) use ($clientId, $userId, $hasDepartmentTables) {
                 $q->whereNotNull('rup.projectId')
                     ->orWhere('zp_projects.psettings', 'all')
                     ->orWhere(function ($q2) use ($clientId) {
@@ -721,7 +721,7 @@ class Tickets
                     ->on('er.relationship', '=', $this->connection->raw("'Collaborator'"))
                     ->on('er.entityA', '=', 'zp_tickets.id');
             })
-            ->where(function ($q) use ($requestorId, $clientId) {
+            ->where(function ($q) use ($requestorId, $clientId, $hasDepartmentTables) {
                 $q->whereIn('zp_tickets.projectId', function ($subquery) use ($requestorId) {
                     $subquery->select('projectId')
                         ->from('zp_relationuserproject')
@@ -805,7 +805,7 @@ class Tickets
             ->leftJoin('zp_user as requestor', function ($join) use ($requestorId) {
                 $join->on('requestor.id', '=', $this->connection->raw((int) $requestorId));
             })
-            ->where(function ($q) use ($activeUserId, $clientId) {
+            ->where(function ($q) use ($activeUserId, $clientId, $hasDepartmentTables) {
                 $q->whereIn('zp_tickets.projectId', function ($subquery) use ($activeUserId) {
                     $subquery->select('projectId')
                         ->from('zp_relationuserproject')
@@ -1167,7 +1167,7 @@ class Tickets
                 $q->where('zp_projects.state', '<>', -1)
                     ->orWhereNull('zp_projects.state');
             })
-            ->where(function ($q) use ($userId, $clientId) {
+            ->where(function ($q) use ($userId, $clientId, $hasDepartmentTables) {
                 $q->whereIn('zp_tickets.projectId', function ($subquery) use ($userId) {
                     $subquery->select('projectId')
                         ->from('zp_relationuserproject')
