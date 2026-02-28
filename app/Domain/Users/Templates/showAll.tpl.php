@@ -70,6 +70,7 @@ $orgRoleNamesByUser = $tpl->get('orgRoleNamesByUser') ?? [];
             <?php foreach ($tpl->get('allUsers') as $row) { ?>
                     <tr>
                         <td style="padding:6px 10px;">
+                             <input type="hidden" name="mappingUserIds[]" value="<?= (int) $row['id'] ?>" />
                              <a href="<?= BASE_URL ?>/users/editUser/<?= $row['id']?>"><?= sprintf($tpl->__('text.full_name'), $tpl->escape($row['firstname']), $tpl->escape($row['lastname'])); ?></a>
                         </td>
                         <td><a href="<?= BASE_URL ?>/users/editUser/<?= $row['id']?>"><?= $tpl->escape($row['username']); ?></a></td>
