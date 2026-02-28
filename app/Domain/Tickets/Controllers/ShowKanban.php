@@ -42,6 +42,17 @@ class ShowKanban extends Controller
      */
     public function get(array $params): Response
     {
+        // Default Kanban to cross-project mode unless a project filter is explicitly requested.
+        // This prevents session currentProject fallback from collapsing new users to one project.
+        if (
+            array_key_exists('currentProject', $params) === false
+            && array_key_exists('projectId', $params) === false
+            && array_key_exists('currentProject', $_GET) === false
+            && array_key_exists('projectId', $_GET) === false
+        ) {
+            $params['currentProject'] = '';
+        }
+
         // Preserve explicit cross-project intent from query string.
         // Some request parsers drop empty values (e.g. currentProject=),
         // which would otherwise fall back to session currentProject.
