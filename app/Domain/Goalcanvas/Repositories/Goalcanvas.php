@@ -225,11 +225,10 @@ class Goalcanvas extends Canvas
                             return;
                         }
                         $q2->where('zp_projects.psettings', 'departments')
-                            ->whereExists(function ($sq) use ($userId) {
-                                $sq->selectRaw('1')
+                            ->whereIn('zp_projects.id', function ($sq) use ($userId) {
+                                $sq->select('opd.projectId')
                                     ->from('zp_org_project_departments as opd')
                                     ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
-                                    ->whereColumn('opd.projectId', 'zp_projects.id')
                                     ->where('oud.userId', $userId);
                             });
                     });

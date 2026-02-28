@@ -366,11 +366,10 @@ class Projects
                             return;
                         }
                         $q2->where('project.psettings', 'departments')
-                            ->whereExists(function ($sq) use ($userId) {
-                                $sq->selectRaw('1')
+                            ->whereIn('project.id', function ($sq) use ($userId) {
+                                $sq->select('opd.projectId')
                                     ->from('zp_org_project_departments as opd')
                                     ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
-                                    ->whereColumn('opd.projectId', 'project.id')
                                     ->where('oud.userId', $userId);
                             });
                     })
@@ -389,11 +388,10 @@ class Projects
                             return;
                         }
                         $q2->where('project.psettings', 'departments')
-                            ->whereExists(function ($sq) use ($userId) {
-                                $sq->selectRaw('1')
+                            ->whereIn('project.id', function ($sq) use ($userId) {
+                                $sq->select('opd.projectId')
                                     ->from('zp_org_project_departments as opd')
                                     ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
-                                    ->whereColumn('opd.projectId', 'project.id')
                                     ->where('oud.userId', $userId);
                             });
                     });
@@ -496,11 +494,10 @@ class Projects
                             return;
                         }
                         $q2->where('project.psettings', 'departments')
-                            ->whereExists(function ($sq) use ($userId) {
-                                $sq->selectRaw('1')
+                            ->whereIn('project.id', function ($sq) use ($userId) {
+                                $sq->select('opd.projectId')
                                     ->from('zp_org_project_departments as opd')
                                     ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
-                                    ->whereColumn('opd.projectId', 'project.id')
                                     ->where('oud.userId', $userId);
                             });
                     });
