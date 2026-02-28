@@ -7,6 +7,8 @@ use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Leantime\Core\Configuration\Environment;
 use Leantime\Core\Controller\Frontcontroller;
 use Leantime\Core\Language;
@@ -20,6 +22,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class Oidc
 {
+    private const DEFAULT_SSO_ORG_ROLE = 'Department Editor';
+    private const DEFAULT_SSO_CLIENT = 'Rehla Digital';
+    private const DEFAULT_SSO_DEPARTMENT = 'Rehla Digital Inc';
+
     private Environment $config;
 
     private Language $Language;
@@ -55,6 +61,9 @@ class Oidc
     private bool $createUser;
 
     private int $defaultRole; // 20 == editor
+    private string $defaultSsoOrgRoleName;
+    private string $defaultSsoClientName;
+    private string $defaultSsoDepartmentName;
 
     private string $fieldEmail;
 
@@ -121,6 +130,18 @@ class Oidc
         } else {
             $this->defaultRole = (int) $defaultRole;
         }
+        $defaultSsoOrgRoleName = $this->settingsRepo->getSetting('companysettings.microsoftAuth.defaultOrgRoleName');
+        $this->defaultSsoOrgRoleName = is_string($defaultSsoOrgRoleName) && trim($defaultSsoOrgRoleName) !== ''
+            ? trim($defaultSsoOrgRoleName)
+            : self::DEFAULT_SSO_ORG_ROLE;
+        $defaultSsoClientName = $this->settingsRepo->getSetting('companysettings.microsoftAuth.defaultClientName');
+        $this->defaultSsoClientName = is_string($defaultSsoClientName) && trim($defaultSsoClientName) !== ''
+            ? trim($defaultSsoClientName)
+            : self::DEFAULT_SSO_CLIENT;
+        $defaultSsoDepartmentName = $this->settingsRepo->getSetting('companysettings.microsoftAuth.defaultDepartmentName');
+        $this->defaultSsoDepartmentName = is_string($defaultSsoDepartmentName) && trim($defaultSsoDepartmentName) !== ''
+            ? trim($defaultSsoDepartmentName)
+            : self::DEFAULT_SSO_DEPARTMENT;
 
         $this->fieldEmail = $this->config->get('oidcFieldEmail', '');
         $this->fieldFirstName = $this->config->get('oidcFieldFirstName', '');
@@ -253,6 +274,10 @@ class Oidc
 
                 if ($userId !== false) {
                     $user = $this->userRepo->getUserByEmail($userName);
+                    if (is_array($user) && isset($user['id'])) {
+                        $this->applyDefaultSsoMappings((int) $user['id']);
+                        $user = $this->userRepo->getUserByEmail($userName);
+                    }
                 } else {
                     throw new \Exception('OIDC user creation failed.');
                 }
@@ -282,6 +307,93 @@ class Oidc
         $this->authService->setUserSession($user, false);
 
         return Frontcontroller::redirect(BASE_URL.'/dashboard/home');
+    }
+
+    private function applyDefaultSsoMappings(int $userId): void
+    {
+        if ($userId <= 0) {
+            return;
+        }
+
+        try {
+            $roleId = $this->findIdByName('zp_org_roles', $this->defaultSsoOrgRoleName);
+            $clientId = $this->findIdByName('zp_clients', $this->defaultSsoClientName);
+            $departmentId = $this->findIdByName('zp_org_departments', $this->defaultSsoDepartmentName);
+
+            if (
+                $roleId <= 0
+                || $clientId <= 0
+                || $departmentId <= 0
+            ) {
+                Log::warning('OIDC default mapping lookup incomplete', [
+                    'userId' => $userId,
+                    'roleId' => $roleId,
+                    'clientId' => $clientId,
+                    'departmentId' => $departmentId,
+                ]);
+            }
+
+            if ($clientId > 0 && Schema::hasTable('zp_user') && Schema::hasColumn('zp_user', 'clientId')) {
+                DB::table('zp_user')
+                    ->where('id', $userId)
+                    ->update([
+                        'clientId' => $clientId,
+                        'modified' => now(),
+                    ]);
+            }
+
+            if ($roleId > 0 && Schema::hasTable('zp_org_user_roles')) {
+                DB::table('zp_org_user_roles')->updateOrInsert(
+                    ['userId' => $userId],
+                    ['roleId' => $roleId, 'updatedOn' => now()]
+                );
+            }
+
+            if ($clientId > 0 && Schema::hasTable('zp_org_user_clients')) {
+                DB::table('zp_org_user_clients')->where('userId', $userId)->delete();
+                DB::table('zp_org_user_clients')->insert([
+                    'userId' => $userId,
+                    'clientId' => $clientId,
+                    'createdOn' => now(),
+                ]);
+            }
+
+            if ($departmentId > 0 && Schema::hasTable('zp_org_user_departments')) {
+                DB::table('zp_org_user_departments')->where('userId', $userId)->delete();
+                DB::table('zp_org_user_departments')->insert([
+                    'userId' => $userId,
+                    'departmentId' => $departmentId,
+                    'createdOn' => now(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Failed applying OIDC default user mappings', [
+                'userId' => $userId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function findIdByName(string $table, string $name): int
+    {
+        if (
+            ! Schema::hasTable($table)
+            || ! Schema::hasColumn($table, 'id')
+            || ! Schema::hasColumn($table, 'name')
+        ) {
+            return 0;
+        }
+
+        $normalized = mb_strtolower(trim($name));
+        if ($normalized === '') {
+            return 0;
+        }
+
+        $id = DB::table($table)
+            ->whereRaw('LOWER(TRIM(name)) = ?', [$normalized])
+            ->value('id');
+
+        return (int) ($id ?? 0);
     }
 
     private function resolveEmail(array $userInfo): string

@@ -330,6 +330,51 @@ foreach ($relevanceLevels as $level => $labelKey) { ?>
                                         </div>
                                     </div>
 
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label for="microsoftAuthDefaultOrgRoleName">Default SSO org role</label>
+                                        </div>
+                                        <div class="col-md-7">
+                                            <input type="text"
+                                                   id="microsoftAuthDefaultOrgRoleName"
+                                                   name="microsoftAuthDefaultOrgRoleName"
+                                                   value="<?php echo $tpl->escape((string) ($companySettings['microsoftAuth']['defaultOrgRoleName'] ?? 'Department Editor')); ?>"
+                                                   class="pull-left"
+                                                   style="width:100%;"
+                                                   placeholder="Department Editor" />
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label for="microsoftAuthDefaultClientName">Default client</label>
+                                        </div>
+                                        <div class="col-md-7">
+                                            <input type="text"
+                                                   id="microsoftAuthDefaultClientName"
+                                                   name="microsoftAuthDefaultClientName"
+                                                   value="<?php echo $tpl->escape((string) ($companySettings['microsoftAuth']['defaultClientName'] ?? 'Rehla Digital')); ?>"
+                                                   class="pull-left"
+                                                   style="width:100%;"
+                                                   placeholder="Rehla Digital" />
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label for="microsoftAuthDefaultDepartmentName">Default unit</label>
+                                        </div>
+                                        <div class="col-md-7">
+                                            <input type="text"
+                                                   id="microsoftAuthDefaultDepartmentName"
+                                                   name="microsoftAuthDefaultDepartmentName"
+                                                   value="<?php echo $tpl->escape((string) ($companySettings['microsoftAuth']['defaultDepartmentName'] ?? 'Rehla Digital Inc')); ?>"
+                                                   class="pull-left"
+                                                   style="width:100%;"
+                                                   placeholder="Rehla Digital Inc" />
+                                        </div>
+                                    </div>
+
                                     <input type="submit" value="<?= $tpl->__('buttons.save')?>" id="saveBtn"/>
                                 </form>
                             </div>

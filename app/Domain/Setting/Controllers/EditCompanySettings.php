@@ -17,6 +17,10 @@ use Leantime\Domain\Setting\Services\Setting as SettingService;
 
 class EditCompanySettings extends Controller
 {
+    private const DEFAULT_SSO_ORG_ROLE_NAME = 'Department Editor';
+    private const DEFAULT_SSO_CLIENT_NAME = 'Rehla Digital';
+    private const DEFAULT_SSO_DEPARTMENT_NAME = 'Rehla Digital Inc';
+
     private SettingRepository $settingsRepo;
 
     private ApiService $APIService;
@@ -76,6 +80,9 @@ class EditCompanySettings extends Controller
                 'clientId' => $this->config->oidcClientId,
                 'allowPublicRegistration' => $this->config->oidcCreateUser,
                 'defaultRole' => $this->config->oidcDefaultRole,
+                'defaultOrgRoleName' => self::DEFAULT_SSO_ORG_ROLE_NAME,
+                'defaultClientName' => self::DEFAULT_SSO_CLIENT_NAME,
+                'defaultDepartmentName' => self::DEFAULT_SSO_DEPARTMENT_NAME,
                 'hasClientSecret' => ! empty($this->config->oidcClientSecret),
             ],
         ];
@@ -108,6 +115,18 @@ class EditCompanySettings extends Controller
         $msClientSecret = $this->settingsRepo->getDecryptedSetting('companysettings.microsoftAuth.clientSecret');
         if ($msClientSecret !== false) {
             $companySettings['microsoftAuth']['hasClientSecret'] = ! empty($msClientSecret);
+        }
+        $msDefaultOrgRoleName = $this->settingsRepo->getSetting('companysettings.microsoftAuth.defaultOrgRoleName');
+        if (is_string($msDefaultOrgRoleName) && trim($msDefaultOrgRoleName) !== '') {
+            $companySettings['microsoftAuth']['defaultOrgRoleName'] = trim($msDefaultOrgRoleName);
+        }
+        $msDefaultClientName = $this->settingsRepo->getSetting('companysettings.microsoftAuth.defaultClientName');
+        if (is_string($msDefaultClientName) && trim($msDefaultClientName) !== '') {
+            $companySettings['microsoftAuth']['defaultClientName'] = trim($msDefaultClientName);
+        }
+        $msDefaultDepartmentName = $this->settingsRepo->getSetting('companysettings.microsoftAuth.defaultDepartmentName');
+        if (is_string($msDefaultDepartmentName) && trim($msDefaultDepartmentName) !== '') {
+            $companySettings['microsoftAuth']['defaultDepartmentName'] = trim($msDefaultDepartmentName);
         }
 
         $mainColor = $this->settingsRepo->getSetting('companysettings.mainColor');
@@ -322,6 +341,23 @@ class EditCompanySettings extends Controller
                     $microsoftClientSecret
                 );
             }
+
+            $defaultOrgRoleName = trim((string) ($params['microsoftAuthDefaultOrgRoleName'] ?? self::DEFAULT_SSO_ORG_ROLE_NAME));
+            $defaultClientName = trim((string) ($params['microsoftAuthDefaultClientName'] ?? self::DEFAULT_SSO_CLIENT_NAME));
+            $defaultDepartmentName = trim((string) ($params['microsoftAuthDefaultDepartmentName'] ?? self::DEFAULT_SSO_DEPARTMENT_NAME));
+
+            $this->settingsRepo->saveSetting(
+                'companysettings.microsoftAuth.defaultOrgRoleName',
+                $defaultOrgRoleName !== '' ? $defaultOrgRoleName : self::DEFAULT_SSO_ORG_ROLE_NAME
+            );
+            $this->settingsRepo->saveSetting(
+                'companysettings.microsoftAuth.defaultClientName',
+                $defaultClientName !== '' ? $defaultClientName : self::DEFAULT_SSO_CLIENT_NAME
+            );
+            $this->settingsRepo->saveSetting(
+                'companysettings.microsoftAuth.defaultDepartmentName',
+                $defaultDepartmentName !== '' ? $defaultDepartmentName : self::DEFAULT_SSO_DEPARTMENT_NAME
+            );
 
             $this->tpl->setNotification($this->language->__('notifications.company_settings_edited_successfully'), 'success');
         }
