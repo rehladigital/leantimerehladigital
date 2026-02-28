@@ -316,7 +316,7 @@ class Organization
         return $result;
     }
 
-    public function saveUserAccessMappings(array $roleByUser, array $clientsByUser, array $departmentsByUser): void
+    public function saveUserAccessMappings(array $roleByUser, array $clientsByUser, array $departmentsByUser, array $userIds = []): void
     {
         if (! Schema::hasTable('zp_org_user_roles')
             || ! Schema::hasTable('zp_org_user_clients')
@@ -326,6 +326,54 @@ class Organization
 
         $this->db->beginTransaction();
         try {
+            $targetUserIds = array_values(array_unique(array_merge(
+                array_map('intval', array_keys($roleByUser)),
+                array_map('intval', array_keys($clientsByUser)),
+                array_map('intval', array_keys($departmentsByUser)),
+                array_map('intval', $userIds)
+            )));
+            $targetUserIds = array_values(array_filter($targetUserIds, fn ($id) => $id > 0));
+
+            foreach ($targetUserIds as $uid) {
+                $rid = (int) ($roleByUser[$uid] ?? 0);
+                if ($rid > 0) {
+                    $this->db->table('zp_org_user_roles')->updateOrInsert(
+                        ['userId' => $uid],
+                        ['roleId' => $rid, 'updatedOn' => date('Y-m-d H:i:s')]
+                    );
+                } else {
+                    $this->db->table('zp_org_user_roles')->where('userId', $uid)->delete();
+                }
+
+                $this->db->table('zp_org_user_clients')->where('userId', $uid)->delete();
+                foreach ((array) ($clientsByUser[$uid] ?? []) as $clientId) {
+                    $cid = (int) $clientId;
+                    if ($cid <= 0) {
+                        continue;
+                    }
+                    $this->db->table('zp_org_user_clients')->insert([
+                        'userId' => $uid,
+                        'clientId' => $cid,
+                        'createdOn' => date('Y-m-d H:i:s'),
+                    ]);
+                }
+
+                $this->db->table('zp_org_user_departments')->where('userId', $uid)->delete();
+                foreach ((array) ($departmentsByUser[$uid] ?? []) as $departmentId) {
+                    $did = (int) $departmentId;
+                    if ($did <= 0) {
+                        continue;
+                    }
+                    $this->db->table('zp_org_user_departments')->insert([
+                        'userId' => $uid,
+                        'departmentId' => $did,
+                        'createdOn' => date('Y-m-d H:i:s'),
+                    ]);
+                }
+            }
+
+            // Fallback for direct calls that do not pass explicit target user IDs.
+            if ($targetUserIds === []) {
             foreach ($roleByUser as $userId => $roleId) {
                 $uid = (int) $userId;
                 $rid = (int) $roleId;
@@ -377,6 +425,7 @@ class Organization
                         'createdOn' => date('Y-m-d H:i:s'),
                     ]);
                 }
+            }
             }
 
             $this->db->commit();

@@ -180,7 +180,10 @@ class Widgets
         $widgets = $this->defaultWidgets;
 
         if ($activeWidgets && $activeWidgets != '') {
-            $unserializedData = unserialize($activeWidgets);
+            $unserializedData = @unserialize($activeWidgets);
+            if (! is_array($unserializedData)) {
+                $unserializedData = [];
+            }
 
             $widgets = [];
             foreach ($unserializedData as $key => $widget) {
@@ -268,7 +271,13 @@ class Widgets
         $historyKey = sprintf(self::WIDGET_HISTORY_KEY, $userId);
         $history = $this->settingRepo->getSetting($historyKey);
 
-        return $history ? unserialize($history) : [];
+        if (! $history) {
+            return [];
+        }
+
+        $unserialized = @unserialize($history);
+
+        return is_array($unserialized) ? $unserialized : [];
     }
 
     /**

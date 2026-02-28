@@ -149,6 +149,7 @@ class ShowAll extends Controller
 
         if (isset($params['saveUserMappings'])) {
             try {
+                $mappingUserIds = array_values(array_unique(array_map('intval', (array) ($params['mappingUserIds'] ?? []))));
                 $rawRoleByUser = (array) ($params['userBusinessRole'] ?? []);
                 $roleByUser = [];
                 foreach ($rawRoleByUser as $userId => $roleSelection) {
@@ -165,7 +166,7 @@ class ShowAll extends Controller
 
                 $clientsByUser = (array) ($params['userClients'] ?? []);
                 $unitsByUser = (array) ($params['userUnits'] ?? []);
-                $this->organizationRepo->saveUserAccessMappings($roleByUser, $clientsByUser, $unitsByUser);
+                $this->organizationRepo->saveUserAccessMappings($roleByUser, $clientsByUser, $unitsByUser, $mappingUserIds);
                 $this->tpl->setNotification('User role/client/unit mappings updated.', 'success');
             } catch (\Throwable $e) {
                 report($e);
