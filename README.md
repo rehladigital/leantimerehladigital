@@ -1,122 +1,69 @@
-# Al Mudheer
+# Al Mudheer (The Manager) 💼
+### High-Performance Data Analytics & Project Management
 
-Al Mudheer is a project and work management platform customized for Rehla Digital.
+**Al Mudheer** is an open-source project and work management platform customized by **Rehla Digital**. Built to bridge the gap between high-level strategy and daily execution, it is designed to be as simple to use as Trello but as feature-rich as Jira. It serves as the ultimate open-source alternative to ClickUp, Monday.com, or Asana.
 
 ## Version
 
-- **Current release:** `3.50`
+- **Current release:** `3.50.1`
+- **Installation guide:** [INSTALL.md](INSTALL.md)
+- **Access control docs:** [RBAC.md](RBAC.md)
 
-## Access Control Documentation
+---
 
-- RBAC logic is documented in `RBAC.md`.
-- Open: [RBAC.md](RBAC.md)
+## 🚀 ABSOLUTELY NO CATCH.
+At Rehla Digital, we believe in the power of open-source community.
+- **100% Open Source:** Access the full codebase without restrictions.
+- **No Hidden Fees:** There are no "Pro" versions, no locked features, and no "Premium" tiers.
+- **No Payment Page:** There isn't even a payment page for this code. Just download, host, and manage.
 
-## Fresh Installation Guide (Download and Install)
+---
 
-Use this guide for a clean new installation on a new server or Hostinger hosting account.
+## 🌍 About [Rehla Digital](https://rehladigital.com)
 
-## 1) Server Requirements
+[![Rehla Digital Logo](public/assets/images/logo_blue.svg)](https://rehladigital.com)
 
-- PHP `8.2+` (recommended `8.3`)
-- MySQL/MariaDB (recommended for production) or SQLite
-- Apache/Nginx with URL rewrite enabled
-- Required PHP extensions normally used by this project
+Rehla Digital is a global technology partner specialized in driving digital transformation and innovative software solutions. We pride ourselves on delivering excellence to a diverse portfolio of international clients across:
+- **North America:** Canada & USA
+- **Asia:** India, Malaysia, Singapore
+- **Middle East:** UAE
 
-## 2) Download and Upload Files
+We built **Al Mudheer** to provide teams worldwide with a robust, data-driven tool that simplifies complex project management.
 
-1. Download the latest release ZIP from GitHub Releases (recommended for direct install).
-   - Example release page: `https://github.com/rehladigital/Al-Mudheer/releases`
-   - Download the `Source code (zip)` for version `3.50` (or latest).
-2. Extract and upload all files to your app folder, for example:
-   - `/home/<user>/domains/<domain>/public_html/almudheer`
-3. Keep writable runtime folders available (if used in your environment):
-   - `storage/`
-   - `userfiles/`
+---
 
-## 3) Configure Environment
+## ✨ Why Al Mudheer?
+- **Inclusive Design:** Built with cognitive accessibility in mind (ADHD, Dyslexia, and Autism friendly) to ensure every team member can perform at their best.
+- **Data-Driven Strategy:** Integrated analytics that connect your daily tasks directly to your long-term strategic goals.
+- **Advanced Security:** Highly granular Role-Based Access Control (RBAC) with self-healing schemas for organizational stability.
+- **Modern Experience:** A Tiptap-based rich text editor featuring slash commands, @mentions, and math formulas for seamless documentation.
+- **Optimized Workflow:** Kanban boards with collapsible swimlanes and optimistic UI updates for a lag-free, high-performance experience.
 
-Create or update `config/.env` with your real values.
+---
 
-```env
-LEAN_APP_URL='https://pm.yourdomain.com'
-LEAN_DB_DEFAULT_CONNECTION='mysql'
-LEAN_DB_HOST='localhost'
-LEAN_DB_DATABASE='your_db_name'
-LEAN_DB_USER='your_db_user'
-LEAN_DB_PASSWORD='your_db_password'
-LEAN_DB_PORT='3306'
-LEAN_SESSION_PASSWORD='generate-a-long-random-secret'
-```
+## 🔍 Al Mudheer vs Leantime
 
-If you use Microsoft/SSO login, also set your OIDC keys in the same file.
+| Area | Leantime Core | Al Mudheer (Rehla Digital) |
+|---|---|---|
+| Product Positioning | Lean project management foundation | Expanded to high-performance analytics + strategy execution |
+| Organization Model | Standard team/project structure | Enhanced with global Unit/Client/Project mapping rules |
+| Access Control (RBAC) | Baseline roles and permissions | Granular org-wide role model with self-healing RBAC schema |
+| User Mapping | Typical user assignment patterns | One-role-per-user policy with multi-unit and multi-client mapping |
+| Project Ownership Rules | Flexible defaults | Enforced one-client + one-unit project mapping |
+| Upgrade Stability | Standard upgrade behavior | Hardened DB update flow and release/version alignment safeguards |
+| UI/Workflow Enhancements | Core workflows | Custom Kanban and UX optimizations for faster day-to-day execution |
+| Deployment Operations | Generic deployment approach | Production pipeline hardening and deployment smoke checks |
 
-## 4) Web Root and Rewrite Rules
+---
 
-- Point your domain/subdomain document root to the app `public/` directory when possible.
-- If your host does not support that directly, keep the project in one folder and ensure `.htaccess` rewrite routes requests to `public/index.php`.
-- Confirm `public/.htaccess` is present.
+## 📞 Reach Us
+Have questions or want to learn more about how Rehla Digital supports global organizations? Reach out to us directly:
 
-## 5) Install Dependencies
+- **Email:** [git@rehladigital.com](mailto:git@rehladigital.com)
+- **Website:** [rehladigital.com](https://rehladigital.com)
 
-From project root:
-
-```bash
-php composer.phar install --no-dev --prefer-dist -o --ignore-platform-reqs
-```
-
-Hostinger-compatible PHP path example:
-
-```bash
-/opt/alt/php83/usr/bin/php composer.phar install --no-dev --prefer-dist -o --ignore-platform-reqs
-```
-
-## 6) Run Initial Installer
-
-1. Open `https://pm.yourdomain.com/install`
-2. Complete the setup wizard.
-3. Create admin user credentials.
-
-## 7) Run Post-Install Update and Cache Clear
-
-From project root:
-
-```bash
-/opt/alt/php83/usr/bin/php bin/leantime system:update
-/opt/alt/php83/usr/bin/php bin/leantime cache:clearAll
-```
-
-If you are not on Hostinger, use your server's PHP binary path.
-
-## 8) Validation Checklist
-
-- `https://pm.yourdomain.com/auth/login` returns HTTP `200`
-- Login works with your admin account
-- Dashboard opens successfully
-- Static assets load (CSS/JS without 404/500)
-
-## 9) Optional: SQLite Quick Bootstrap
-
-`manual_sqlite_install.php` can be used for helper bootstrap scenarios.
-Set values through environment variables:
-
-- `ALMUDHEER_ADMIN_EMAIL`
-- `ALMUDHEER_ADMIN_PASSWORD`
-- `ALMUDHEER_ADMIN_FIRSTNAME`
-- `ALMUDHEER_ADMIN_LASTNAME`
-- `ALMUDHEER_COMPANY_NAME`
-- `ALMUDHEER_COMPANY_COUNTRY`
-- `ALMUDHEER_CURRENCY_CODE`
-- `ALMUDHEER_TIMEZONE`
-
-## 10) Production Deployment Notes
-
-- Recommended branch flow: `develop` -> `prod` -> `main`
-- Production deploy is handled by GitHub Actions workflow:
-  - `.github/workflows/deploy-prod.yml`
-- Never commit secrets; keep credentials only in:
-  - server `config/.env`
-  - GitHub repository secrets
+---
 
 ## License
 
-This project is distributed under AGPLv3, including plugin-related license exceptions defined by the codebase.
+Al Mudheer is based on the [Leantime](https://leantime.io) core and is licensed under AGPLv3.
