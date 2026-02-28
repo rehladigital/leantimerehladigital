@@ -6,6 +6,7 @@ use DateInterval;
 use DatePeriod;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Support\Facades\Schema;
 use Leantime\Core\Configuration\Environment;
 use Leantime\Core\Db\DatabaseHelper;
 use Leantime\Core\Db\Db as DbCore;
@@ -247,6 +248,42 @@ class Projects
         })->toArray();
     }
 
+    public function getUsersByProjectDepartment(int $projectId): array
+    {
+        if (! Schema::hasTable('zp_org_project_departments') || ! Schema::hasTable('zp_org_user_departments')) {
+            return [];
+        }
+
+        $results = $this->connection->table('zp_org_project_departments as opd')
+            ->select([
+                'u.id',
+                'u.firstname',
+                'u.lastname',
+                'u.username',
+                'u.notifications',
+                'u.profileId',
+                'u.jobTitle',
+                'u.source',
+                'u.status',
+                'u.modified',
+                'u.role',
+            ])
+            ->selectRaw('NULL AS '.$this->dbHelper->wrapColumn('projectRole'))
+            ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
+            ->join('zp_user as u', 'u.id', '=', 'oud.userId')
+            ->where('opd.projectId', $projectId)
+            ->distinct()
+            ->orderBy('u.lastname')
+            ->get();
+
+        return $results->map(function ($item) {
+            $arr = (array) $item;
+            $arr['firstname'] = $arr['firstname'] ?? $arr['username'];
+
+            return $arr;
+        })->toArray();
+    }
+
     /**
      * Retrieves the relationship of users assigned to a specific project.
      *
@@ -263,6 +300,8 @@ class Projects
 
     public function getUserProjects(int $userId, string $projectStatus = 'all', ?int $clientId = null, string $accessStatus = 'assigned', string $projectTypes = 'all'): false|array
     {
+        $hasDepartmentTables = Schema::hasTable('zp_org_project_departments') && Schema::hasTable('zp_org_user_departments');
+
         $query = $this->connection->table('zp_projects as project')
             ->select([
                 'project.id',
@@ -304,21 +343,47 @@ class Projects
 
         // All Projects this user has access to
         if ($accessStatus == 'all') {
-            $query->where(function ($q) use ($userId) {
+            $query->where(function ($q) use ($userId, $hasDepartmentTables) {
                 $q->where('relation.userId', $userId)
                     ->orWhere(function ($q2) {
                         $q2->where('project.psettings', 'clients')
                             ->whereColumn('project.clientId', 'requestingUser.clientId');
                     })
+                    ->orWhere(function ($q2) use ($userId, $hasDepartmentTables) {
+                        if (! $hasDepartmentTables) {
+                            return;
+                        }
+                        $q2->where('project.psettings', 'departments')
+                            ->whereExists(function ($sq) use ($userId) {
+                                $sq->selectRaw('1')
+                                    ->from('zp_org_project_departments as opd')
+                                    ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
+                                    ->whereColumn('opd.projectId', 'project.id')
+                                    ->where('oud.userId', $userId);
+                            });
+                    })
                     ->orWhere('project.psettings', 'all')
                     ->orWhere('requestingUser.role', '>=', 40);
             });
         } elseif ($accessStatus == 'clients') {
-            $query->where(function ($q) use ($userId) {
+            $query->where(function ($q) use ($userId, $hasDepartmentTables) {
                 $q->where('relation.userId', $userId)
                     ->orWhere(function ($q2) {
                         $q2->where('project.psettings', 'clients')
                             ->whereColumn('project.clientId', 'requestingUser.clientId');
+                    })
+                    ->orWhere(function ($q2) use ($userId, $hasDepartmentTables) {
+                        if (! $hasDepartmentTables) {
+                            return;
+                        }
+                        $q2->where('project.psettings', 'departments')
+                            ->whereExists(function ($sq) use ($userId) {
+                                $sq->selectRaw('1')
+                                    ->from('zp_org_project_departments as opd')
+                                    ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
+                                    ->whereColumn('opd.projectId', 'project.id')
+                                    ->where('oud.userId', $userId);
+                            });
                     });
             });
         } else {
@@ -381,6 +446,8 @@ class Projects
     // This populates the projects show all tab and shows users all the projects that they could access
     public function getProjectsUserHasAccessTo($userId, string $status = 'all', string $clientId = ''): false|array
     {
+        $hasDepartmentTables = Schema::hasTable('zp_org_project_departments') && Schema::hasTable('zp_org_user_departments');
+
         $query = $this->connection->table('zp_projects as project')
             ->select([
                 'project.id',
@@ -405,12 +472,25 @@ class Projects
                     ->where('favorite.reaction', 'favorite')
                     ->where('favorite.userId', $userId);
             })
-            ->where(function ($q) use ($userId, $clientId) {
+            ->where(function ($q) use ($userId, $clientId, $hasDepartmentTables) {
                 $q->where('relation.userId', $userId)
                     ->orWhere('project.psettings', 'all')
                     ->orWhere(function ($q2) use ($clientId) {
                         $q2->where('project.psettings', 'clients')
                             ->where('project.clientId', $clientId);
+                    })
+                    ->orWhere(function ($q2) use ($userId, $hasDepartmentTables) {
+                        if (! $hasDepartmentTables) {
+                            return;
+                        }
+                        $q2->where('project.psettings', 'departments')
+                            ->whereExists(function ($sq) use ($userId) {
+                                $sq->selectRaw('1')
+                                    ->from('zp_org_project_departments as opd')
+                                    ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
+                                    ->whereColumn('opd.projectId', 'project.id')
+                                    ->where('oud.userId', $userId);
+                            });
                     });
             })
             ->where(function ($q) {
@@ -890,6 +970,22 @@ class Projects
         // Everyone in client is allowed to see project
         if ($project['psettings'] === 'clients') {
             if ($user['clientId'] == $project['clientId']) {
+                return true;
+            }
+        }
+
+        // Everyone in department is allowed to see project
+        if ($project['psettings'] === 'departments') {
+            $hasDepartmentTables = Schema::hasTable('zp_org_project_departments') && Schema::hasTable('zp_org_user_departments');
+            $hasDepartmentAccess = $hasDepartmentTables
+                ? $this->connection->table('zp_org_project_departments as opd')
+                    ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
+                    ->where('opd.projectId', $projectId)
+                    ->where('oud.userId', $userId)
+                    ->exists()
+                : false;
+
+            if ($hasDepartmentAccess) {
                 return true;
             }
         }

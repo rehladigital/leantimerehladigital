@@ -9,6 +9,7 @@ use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Leantime\Core\Db\DatabaseHelper;
 use Leantime\Core\Db\Db as DbCore;
 use Leantime\Core\Db\Repository;
@@ -200,6 +201,7 @@ class Timesheets extends Repository
                 $userId = session('userdata.id') ?? '-1';
                 $clientId = session('userdata.clientId') ?? '-1';
                 $requesterRole = session()->exists('userdata') ? session('userdata.role') : -1;
+                $hasDepartmentTables = Schema::hasTable('zp_org_project_departments') && Schema::hasTable('zp_org_user_departments');
 
                 $q->whereIn('zp_tickets.projectId', function ($subquery) use ($userId) {
                     $subquery->select('projectId')
@@ -210,6 +212,19 @@ class Timesheets extends Repository
                     ->orWhere(function ($q2) use ($clientId) {
                         $q2->where('zp_projects.psettings', 'clients')
                             ->where('zp_projects.clientId', $clientId);
+                    })
+                    ->orWhere(function ($q2) use ($userId, $hasDepartmentTables) {
+                        if (! $hasDepartmentTables) {
+                            return;
+                        }
+                        $q2->where('zp_projects.psettings', 'departments')
+                            ->whereExists(function ($sq) use ($userId) {
+                                $sq->selectRaw('1')
+                                    ->from('zp_org_project_departments as opd')
+                                    ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
+                                    ->whereColumn('opd.projectId', 'zp_projects.id')
+                                    ->where('oud.userId', $userId);
+                            });
                     })
                     ->orWhere(function ($q3) use ($requesterRole) {
                         if ($requesterRole === 'admin' || $requesterRole === 'manager') {

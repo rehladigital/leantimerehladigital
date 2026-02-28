@@ -7,6 +7,7 @@
 namespace Leantime\Domain\Goalcanvas\Repositories;
 
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Support\Facades\Schema;
 use Leantime\Core\Db\DatabaseHelper;
 use Leantime\Core\Db\Db as DbCore;
 use Leantime\Core\Language as LanguageCore;
@@ -152,6 +153,7 @@ class Goalcanvas extends Canvas
         $userId = session('userdata.id') ?? -1;
         $clientId = session('userdata.clientId') ?? -1;
         $requesterRole = session()->exists('userdata') ? session('userdata.role') : -1;
+        $hasDepartmentTables = Schema::hasTable('zp_org_project_departments') && Schema::hasTable('zp_org_user_departments');
 
         $query = $this->dbConnection->table('zp_canvas_items')
             ->select(
@@ -205,6 +207,19 @@ class Goalcanvas extends Canvas
                     ->orWhere(function ($q2) use ($clientId) {
                         $q2->where('zp_projects.psettings', 'clients')
                             ->where('zp_projects.clientId', $clientId);
+                    })
+                    ->orWhere(function ($q2) use ($userId, $hasDepartmentTables) {
+                        if (! $hasDepartmentTables) {
+                            return;
+                        }
+                        $q2->where('zp_projects.psettings', 'departments')
+                            ->whereExists(function ($sq) use ($userId) {
+                                $sq->selectRaw('1')
+                                    ->from('zp_org_project_departments as opd')
+                                    ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
+                                    ->whereColumn('opd.projectId', 'zp_projects.id')
+                                    ->where('oud.userId', $userId);
+                            });
                     });
                 // Admin and manager roles have access to all projects
                 if (in_array($requesterRole, ['admin', 'manager'])) {

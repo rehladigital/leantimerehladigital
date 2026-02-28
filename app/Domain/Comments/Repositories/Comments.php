@@ -3,6 +3,7 @@
 namespace Leantime\Domain\Comments\Repositories;
 
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Support\Facades\Schema;
 use Leantime\Core\Db\Db as DbCore;
 
 class Comments
@@ -139,6 +140,7 @@ class Comments
         $userId = session('userdata.id') ?? -1;
         $clientId = session('userdata.clientId') ?? -1;
         $requesterRole = session()->exists('userdata') ? session('userdata.role') : -1;
+        $hasDepartmentTables = Schema::hasTable('zp_org_project_departments') && Schema::hasTable('zp_org_user_departments');
 
         $query = $this->db->table('zp_comment as comment')
             ->select(
@@ -169,6 +171,19 @@ class Comments
                     ->orWhere(function ($q2) use ($clientId) {
                         $q2->where('zp_projects.psettings', 'clients')
                             ->where('zp_projects.clientId', $clientId);
+                    })
+                    ->orWhere(function ($q2) use ($userId, $hasDepartmentTables) {
+                        if (! $hasDepartmentTables) {
+                            return;
+                        }
+                        $q2->where('zp_projects.psettings', 'departments')
+                            ->whereExists(function ($sq) use ($userId) {
+                                $sq->selectRaw('1')
+                                    ->from('zp_org_project_departments as opd')
+                                    ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
+                                    ->whereColumn('opd.projectId', 'zp_projects.id')
+                                    ->where('oud.userId', $userId);
+                            });
                     })
                     ->orWhere(function ($q3) use ($requesterRole) {
                         if (in_array($requesterRole, ['admin', 'manager'])) {

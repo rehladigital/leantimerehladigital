@@ -21,8 +21,6 @@ At Rehla Digital, we believe in the power of open-source community.
 
 ## 🌍 About [Rehla Digital](https://rehladigital.com)
 
-[![Rehla Digital Logo](public/assets/images/logo_blue.svg)](https://rehladigital.com)
-
 Rehla Digital is a global technology partner specialized in driving digital transformation and innovative software solutions. We pride ourselves on delivering excellence to a diverse portfolio of international clients across:
 - **North America:** Canada & USA
 - **Asia:** India, Malaysia, Singapore

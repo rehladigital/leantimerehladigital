@@ -168,6 +168,7 @@ $project = $tpl->get('project');
 
                                     <select name="globalProjectUserAccess" style="max-width:300px;">
                                         <option value="restricted" <?= $project['psettings'] == 'restricted' ? "selected='selected'" : '' ?>><?php echo $tpl->__('labels.only_chose'); ?></option>
+                                        <option value="departments" <?= $project['psettings'] == 'departments' ? "selected='selected'" : ''?>><?php echo $tpl->__('labels.everyone_in_department'); ?></option>
                                         <option value="clients" <?= $project['psettings'] == 'clients' ? "selected='selected'" : ''?>><?php echo $tpl->__('labels.everyone_in_client'); ?></option>
                                         <option value="all" <?= $project['psettings'] == 'all' ? "selected='selected'" : ''?>><?php echo $tpl->__('labels.everyone_in_org'); ?></option>
                                     </select>

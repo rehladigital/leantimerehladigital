@@ -34,7 +34,7 @@ class Connector
             if ($entity == 'projects') {
                 $flags[] = 'If there are no Assigned Users, the project will be assigned to you.';
                 $flags[] = 'If there are more than one assigned users, ensure that it is a comma separated list.';
-                $flags[] = 'If you decide to set permissions settings they have to be one of the following types: all, clients or restricted.';
+                $flags[] = 'If you decide to set permissions settings they have to be one of the following types: all, departments, clients or restricted.';
                 $flags[] = 'Project Name and Client Id re required fields';
             } else {
                 if ($entity == 'users') {
@@ -666,7 +666,7 @@ class Connector
 
     private function importProjects($finalMappings, $finalValues)
     {
-        $psettings = ['all', 'clients', 'restricted'];
+        $psettings = ['all', 'departments', 'clients', 'restricted'];
         foreach ($finalValues as $row) {
             $values = [];
             for ($i = 0; $i < count($finalMappings); $i = $i + 2) {

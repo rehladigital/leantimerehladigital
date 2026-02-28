@@ -6,6 +6,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use Leantime\Core\Db\DatabaseHelper;
 use Leantime\Core\Db\Db as DbCore;
 use Leantime\Core\Events\DispatchesEvents as EventhelperCore;
@@ -264,6 +265,7 @@ class Tickets
     {
         $users = app()->make(Users::class);
         $user = $users->getUser($id);
+        $hasDepartmentTables = Schema::hasTable('zp_org_project_departments') && Schema::hasTable('zp_org_user_departments');
 
         $query = $this->connection->table('zp_tickets as ticket')
             ->select([
@@ -301,6 +303,19 @@ class Tickets
                     ->orWhere(function ($q2) use ($user) {
                         $q2->where('project.psettings', 'clients')
                             ->where('project.clientId', $user['clientId'] ?? '');
+                    })
+                    ->orWhere(function ($q2) use ($id, $hasDepartmentTables) {
+                        if (! $hasDepartmentTables) {
+                            return;
+                        }
+                        $q2->where('project.psettings', 'departments')
+                            ->whereExists(function ($sq) use ($id) {
+                                $sq->selectRaw('1')
+                                    ->from('zp_org_project_departments as opd')
+                                    ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
+                                    ->whereColumn('opd.projectId', 'project.id')
+                                    ->where('oud.userId', $id);
+                            });
                     });
             })
             ->where('ticket.type', '<>', 'milestone')
@@ -330,6 +345,7 @@ class Tickets
         $requestorId = session()->exists('userdata') ? session('userdata.id') : -1;
         $userId = $searchCriteria['currentUser'] ?? session('userdata.id') ?? '-1';
         $clientId = $searchCriteria['currentClient'] ?? session('userdata.clientId') ?? '-1';
+        $hasDepartmentTables = Schema::hasTable('zp_org_project_departments') && Schema::hasTable('zp_org_user_departments');
 
         $query = $this->connection->table('zp_tickets')
             ->select([
@@ -459,6 +475,19 @@ class Tickets
                     ->orWhere(function ($q2) use ($clientId) {
                         $q2->where('zp_projects.psettings', 'clients')
                             ->where('zp_projects.clientId', $clientId);
+                    })
+                    ->orWhere(function ($q2) use ($userId, $hasDepartmentTables) {
+                        if (! $hasDepartmentTables) {
+                            return;
+                        }
+                        $q2->where('zp_projects.psettings', 'departments')
+                            ->whereExists(function ($sq) use ($userId) {
+                                $sq->selectRaw('1')
+                                    ->from('zp_org_project_departments as opd')
+                                    ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
+                                    ->whereColumn('opd.projectId', 'zp_projects.id')
+                                    ->where('oud.userId', $userId);
+                            });
                     })
                     ->orWhere('requestor.role', '>=', 40);
             });
@@ -634,6 +663,7 @@ class Tickets
     {
         $requestorId = session()->exists('userdata') ? session('userdata.id') : -1;
         $clientId = session('userdata.clientId') ?? '-1';
+        $hasDepartmentTables = Schema::hasTable('zp_org_project_departments') && Schema::hasTable('zp_org_user_departments');
 
         $query = $this->connection->table('zp_tickets')
             ->select([
@@ -684,6 +714,19 @@ class Tickets
                         $q2->where('zp_projects.psettings', 'clients')
                             ->where('zp_projects.clientId', $clientId);
                     })
+                    ->orWhere(function ($q2) use ($requestorId, $hasDepartmentTables) {
+                        if (! $hasDepartmentTables) {
+                            return;
+                        }
+                        $q2->where('zp_projects.psettings', 'departments')
+                            ->whereExists(function ($sq) use ($requestorId) {
+                                $sq->selectRaw('1')
+                                    ->from('zp_org_project_departments as opd')
+                                    ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
+                                    ->whereColumn('opd.projectId', 'zp_projects.id')
+                                    ->where('oud.userId', $requestorId);
+                            });
+                    })
                     ->orWhere('requestor.role', '>=', 40);
             });
 
@@ -715,6 +758,7 @@ class Tickets
         $requestorId = session()->exists('userdata') ? session('userdata.id') : -1;
         $clientId = session('userdata.clientId') ?? '-1';
         $activeUserId = $userId ?? (session('userdata.id') ?? '-1');
+        $hasDepartmentTables = Schema::hasTable('zp_org_project_departments') && Schema::hasTable('zp_org_user_departments');
 
         $query = $this->connection->table('zp_tickets')
             ->select([
@@ -753,6 +797,19 @@ class Tickets
                     ->orWhere(function ($q2) use ($clientId) {
                         $q2->where('zp_projects.psettings', 'clients')
                             ->where('zp_projects.clientId', $clientId);
+                    })
+                    ->orWhere(function ($q2) use ($activeUserId, $hasDepartmentTables) {
+                        if (! $hasDepartmentTables) {
+                            return;
+                        }
+                        $q2->where('zp_projects.psettings', 'departments')
+                            ->whereExists(function ($sq) use ($activeUserId) {
+                                $sq->selectRaw('1')
+                                    ->from('zp_org_project_departments as opd')
+                                    ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
+                                    ->whereColumn('opd.projectId', 'zp_projects.id')
+                                    ->where('oud.userId', $activeUserId);
+                            });
                     })
                     ->orWhere('requestor.role', '>=', 40);
             })
@@ -1039,6 +1096,7 @@ class Tickets
         $requestorId = session('userdata.id') ?? '-1';
         $userId = $searchCriteria['currentUser'] ?? session('userdata.id') ?? '-1';
         $clientId = $searchCriteria['currentClient'] ?? session('userdata.clientId') ?? '-1';
+        $hasDepartmentTables = Schema::hasTable('zp_org_project_departments') && Schema::hasTable('zp_org_user_departments');
 
         $query = $this->connection->table('zp_tickets')
             ->select([
@@ -1101,6 +1159,19 @@ class Tickets
                     ->orWhere(function ($q2) use ($clientId) {
                         $q2->where('zp_projects.psettings', 'clients')
                             ->where('zp_projects.clientId', $clientId);
+                    })
+                    ->orWhere(function ($q2) use ($userId, $hasDepartmentTables) {
+                        if (! $hasDepartmentTables) {
+                            return;
+                        }
+                        $q2->where('zp_projects.psettings', 'departments')
+                            ->whereExists(function ($sq) use ($userId) {
+                                $sq->selectRaw('1')
+                                    ->from('zp_org_project_departments as opd')
+                                    ->join('zp_org_user_departments as oud', 'oud.departmentId', '=', 'opd.departmentId')
+                                    ->whereColumn('opd.projectId', 'zp_projects.id')
+                                    ->where('oud.userId', $userId);
+                            });
                     })
                     ->orWhere('requestor.role', '>=', 40);
             });

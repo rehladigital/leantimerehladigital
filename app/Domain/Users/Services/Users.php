@@ -384,6 +384,21 @@ class Users
                 return $users;
             }
 
+            if ($project['psettings'] == 'departments') {
+                $departmentUsers = $this->projectRepository->getUsersByProjectDepartment($projectId);
+                $projectUsers = $this->projectRepository->getUsersAssignedToProject($projectId);
+                $users = $departmentUsers;
+
+                foreach ($projectUsers as $user) {
+                    $column = array_column($users, 'id');
+                    if (array_search($user['id'], $column) === false) {
+                        $users[] = $user;
+                    }
+                }
+
+                return $users;
+            }
+
             if ($project['psettings'] == 'restricted' || $project['psettings'] == '') {
                 $users = $this->projectRepository->getUsersAssignedToProject($projectId);
 
